@@ -4,7 +4,6 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
-import { SidebarProvider } from "@/components/ui/sidebar";
 import Dashboard from "@/pages/dashboard";
 import NotFound from "@/pages/not-found";
 
@@ -17,20 +16,13 @@ function Router() {
   );
 }
 
-const sidebarStyle = {
-  "--sidebar-width": "16rem",
-  "--sidebar-width-icon": "3rem",
-} as React.CSSProperties;
-
 function App() {
   return (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <SidebarProvider style={sidebarStyle}>
-            <Toaster />
-            <Router />
-          </SidebarProvider>
+          <Toaster />
+          <Router />
         </TooltipProvider>
       </QueryClientProvider>
     </ThemeProvider>
