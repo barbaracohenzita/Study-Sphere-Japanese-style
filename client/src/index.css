@@ -253,11 +253,6 @@
     transition: border-color 0.15s ease;
   }
 
-  .neo-slider [data-radix-slider-thumb]:hover {
-    border-color: hsl(var(--primary));
-    background: hsl(var(--primary) / 0.1);
-  }
-
   .neo-slider [data-radix-slider-thumb]:focus {
     outline: none;
     border-width: 3px;
