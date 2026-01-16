@@ -387,8 +387,15 @@ export default function Dashboard() {
       <header className="h-16 border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto h-full px-8 flex items-center justify-between">
           <h1 className="text-xl font-serif tracking-tight">書斎 <span className="text-sm text-muted-foreground ml-2">StudyFlow</span></h1>
-          <div className="flex items-center gap-6">
-            <span className="text-sm text-muted-foreground">専念</span>
+          <nav className="flex items-center gap-8">
+            <span className="text-sm text-foreground border-b-2 border-foreground pb-1">Timer</span>
+            <span className="text-sm text-muted-foreground">History</span>
+          </nav>
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <span className="text-xs text-muted-foreground block">Today</span>
+              <span className="text-sm font-mono">{todayWorkSessions.length} sessions</span>
+            </div>
             <ThemeToggle />
           </div>
         </div>
@@ -427,7 +434,25 @@ export default function Dashboard() {
 
             <div className="relative flex justify-center mb-8">
               <svg width="320" height="320" viewBox="0 0 320 320" className="transform -rotate-90">
-                <circle cx="160" cy="160" r="150" fill="none" stroke="hsl(var(--border))" strokeWidth="1" />
+                <circle cx="160" cy="160" r="150" fill="none" stroke="hsl(var(--border))" strokeWidth="4" />
+                {[0, 1, 2, 3].map((i) => {
+                  const angle = (i * 90) * Math.PI / 180;
+                  const x1 = 160 + 142 * Math.cos(angle);
+                  const y1 = 160 + 142 * Math.sin(angle);
+                  const x2 = 160 + 150 * Math.cos(angle);
+                  const y2 = 160 + 150 * Math.sin(angle);
+                  return (
+                    <line
+                      key={i}
+                      x1={x1}
+                      y1={y1}
+                      x2={x2}
+                      y2={y2}
+                      stroke="hsl(var(--foreground))"
+                      strokeWidth="2"
+                    />
+                  );
+                })}
                 <circle
                   cx="160" cy="160" r="150"
                   fill="none"
@@ -507,14 +532,18 @@ export default function Dashboard() {
               </div>
             )}
 
-            <div className="mt-8 pt-6 border-t border-border grid grid-cols-2 gap-4">
-              <div className="text-center">
-                <div className="text-3xl font-light text-foreground font-mono tabular-nums">{todayWorkSessions.length}</div>
-                <div className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Sessions</div>
+            <div className="mt-8 pt-6 border-t border-border grid grid-cols-3 gap-3">
+              <div className="border border-border p-3 text-center">
+                <div className="text-2xl font-light text-foreground font-mono tabular-nums">{todayWorkSessions.length}</div>
+                <div className="text-[9px] text-muted-foreground uppercase tracking-widest mt-1">Sessions</div>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-light text-foreground font-mono tabular-nums">{todayFocusMinutes}</div>
-                <div className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Minutes</div>
+              <div className="border border-border p-3 text-center">
+                <div className="text-2xl font-light text-foreground font-mono tabular-nums">{todayFocusMinutes}</div>
+                <div className="text-[9px] text-muted-foreground uppercase tracking-widest mt-1">Minutes</div>
+              </div>
+              <div className="border border-border p-3 text-center">
+                <div className="text-2xl font-light text-foreground font-mono tabular-nums">{Math.max(1, sessions.filter(s => s.type === "work").length > 0 ? 1 : 0)}</div>
+                <div className="text-[9px] text-muted-foreground uppercase tracking-widest mt-1">Streak</div>
               </div>
             </div>
           </div>
