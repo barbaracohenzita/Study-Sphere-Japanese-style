@@ -1,18 +1,15 @@
 import { useState, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { AppSidebar } from "@/components/app-sidebar";
 import { PomodoroTimer } from "@/components/pomodoro-timer";
 import { TaskList } from "@/components/task-list";
 import { StatsCards } from "@/components/stats-cards";
 import { SettingsPanel } from "@/components/settings-panel";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { GraduationCap } from "lucide-react";
 import type { Task, Settings, Session, SessionType } from "@shared/schema";
 
-type View = "timer" | "tasks" | "stats" | "settings";
-
 export default function Dashboard() {
-  const [currentView, setCurrentView] = useState<View>("timer");
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
 
   const { data: tasks = [], isLoading: tasksLoading } = useQuery<Task[]>({
@@ -134,23 +131,36 @@ export default function Dashboard() {
   
   const completedWorkSessions = sessions.filter(s => s.type === "work").length;
 
-  const renderContent = () => {
-    switch (currentView) {
-      case "timer":
-        return (
-          <div className="flex-1 flex flex-col items-center justify-center p-8">
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-50 neo-card border-b border-border px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="neo-button p-2 rounded-xl">
+              <GraduationCap className="w-8 h-8 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-foreground">StudyFlow</h1>
+              <p className="text-xs text-muted-foreground">Focus & Achieve</p>
+            </div>
+          </div>
+          <ThemeToggle />
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <section className="neo-card rounded-3xl p-8">
             <PomodoroTimer
               settings={currentSettings}
               currentTask={currentTask}
               onSessionComplete={handleSessionComplete}
               completedSessions={completedWorkSessions}
             />
-          </div>
-        );
-      case "tasks":
-        return (
-          <div className="flex-1 p-8 max-w-2xl mx-auto w-full">
-            <h2 className="text-2xl font-bold text-foreground mb-6">Today's Tasks</h2>
+          </section>
+
+          <section className="neo-card rounded-3xl p-6">
+            <h2 className="text-xl font-bold text-foreground mb-4">Today's Tasks</h2>
             {tasksLoading ? (
               <div className="neo-inset rounded-2xl p-8 text-center">
                 <p className="text-muted-foreground">Loading tasks...</p>
@@ -165,71 +175,26 @@ export default function Dashboard() {
                 onSelectTask={handleSelectTask}
               />
             )}
-          </div>
-        );
-      case "stats":
-        return (
-          <div className="flex-1 p-8 max-w-4xl mx-auto w-full">
-            <h2 className="text-2xl font-bold text-foreground mb-6">Your Progress</h2>
-            <StatsCards
-              sessionsToday={sessionsToday}
-              totalFocusMinutes={totalFocusMinutes}
-              currentStreak={1}
-              tasksCompleted={tasksCompleted}
-            />
-            
-            <div className="mt-8">
-              <h3 className="text-lg font-semibold text-foreground mb-4">Recent Sessions</h3>
-              {sessions.length === 0 ? (
-                <div className="neo-inset rounded-2xl p-8 text-center">
-                  <p className="text-muted-foreground">No sessions yet</p>
-                  <p className="text-sm text-muted-foreground mt-1">Start your first focus session!</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {sessions.slice(0, 10).map((session) => (
-                    <div key={session.id} className="neo-card rounded-xl p-4 flex items-center justify-between gap-4 flex-wrap">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-3 h-3 rounded-full ${
-                          session.type === "work" ? "bg-primary" :
-                          session.type === "shortBreak" ? "bg-chart-4" : "bg-chart-2"
-                        }`} />
-                        <div>
-                          <p className="font-medium text-foreground capitalize">{session.type.replace(/([A-Z])/g, ' $1').trim()}</p>
-                          <p className="text-sm text-muted-foreground">{Math.floor(session.duration / 60)} minutes</p>
-                        </div>
-                      </div>
-                      <span className="text-sm text-muted-foreground">
-                        {new Date(session.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      case "settings":
-        return (
-          <div className="flex-1 p-8 max-w-2xl mx-auto w-full">
-            <h2 className="text-2xl font-bold text-foreground mb-6">Settings</h2>
-            <SettingsPanel
-              settings={currentSettings}
-              onUpdateSettings={handleUpdateSettings}
-            />
-          </div>
-        );
-    }
-  };
+          </section>
+        </div>
 
-  return (
-    <div className="flex h-screen w-full bg-background">
-      <AppSidebar currentView={currentView} onViewChange={setCurrentView} />
-      <main className="flex-1 overflow-auto flex flex-col">
-        <header className="flex items-center p-4 border-b border-border">
-          <SidebarTrigger data-testid="button-sidebar-toggle" className="neo-button" />
-        </header>
-        {renderContent()}
+        <section className="mt-8">
+          <h2 className="text-xl font-bold text-foreground mb-4">Your Progress</h2>
+          <StatsCards
+            sessionsToday={sessionsToday}
+            totalFocusMinutes={totalFocusMinutes}
+            currentStreak={1}
+            tasksCompleted={tasksCompleted}
+          />
+        </section>
+
+        <section className="mt-8 neo-card rounded-3xl p-6">
+          <h2 className="text-xl font-bold text-foreground mb-6">Settings</h2>
+          <SettingsPanel
+            settings={currentSettings}
+            onUpdateSettings={handleUpdateSettings}
+          />
+        </section>
       </main>
     </div>
   );
