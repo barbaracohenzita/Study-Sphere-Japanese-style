@@ -383,9 +383,21 @@ export default function Dashboard() {
   ).slice(0, 5);
 
   return (
-    <div className="min-h-screen bg-background p-6 md:p-10">
-      <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-12 gap-8 auto-rows-min">
+    <div className="min-h-screen bg-background">
+      <header className="h-16 border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto h-full px-8 flex items-center justify-between">
+          <h1 className="text-xl font-serif tracking-tight">書斎 <span className="text-sm text-muted-foreground ml-2">StudyFlow</span></h1>
+          <div className="flex items-center gap-6">
+            <span className="text-sm text-muted-foreground">専念</span>
+            <ThemeToggle />
+          </div>
+        </div>
+      </header>
+      
+      <div className="max-w-7xl mx-auto px-8 py-12">
+        <p className="text-sm text-muted-foreground tracking-widest uppercase mt-1 mb-8">Focus Timer</p>
+        
+        <div className="grid grid-cols-12 gap-10 auto-rows-min">
           
           <div className="col-span-12 md:col-span-5 border border-border bg-card jp-paper p-10">
             <div className="flex gap-1 mb-6 justify-center border-b border-border pb-4">
@@ -434,12 +446,12 @@ export default function Dashboard() {
 
             <div className="relative flex justify-center mb-8">
               <svg width="200" height="200" viewBox="0 0 200 200" className="transform -rotate-90">
-                <circle cx="100" cy="100" r="90" fill="none" stroke="hsl(var(--border))" strokeWidth="2" />
+                <circle cx="100" cy="100" r="90" fill="none" stroke="hsl(var(--border))" strokeWidth="1" />
                 <circle
                   cx="100" cy="100" r="90"
                   fill="none"
                   stroke={sessionType === "work" ? "hsl(var(--foreground))" : "hsl(var(--primary))"}
-                  strokeWidth="3"
+                  strokeWidth="2"
                   strokeLinecap="square"
                   strokeDasharray={circumference}
                   strokeDashoffset={strokeDashoffset}
@@ -474,106 +486,56 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="col-span-6 md:col-span-4 border border-border bg-card jp-paper p-8 flex flex-col justify-center">
-            <div className="text-5xl font-light text-foreground tracking-tight font-mono">
-              {month}/{day}
-            </div>
-            <div className="text-2xl text-muted-foreground font-light">
-              {displayHours}{timeOfDay}
-            </div>
-            <div className="jp-divider my-4" />
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Clock className="w-4 h-4" />
-              <span>{todayFocusMinutes} min focused today</span>
-            </div>
-          </div>
-
-          <div className="col-span-6 md:col-span-4 border border-border bg-card jp-paper p-8">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-serif tracking-tight text-foreground uppercase">Ambience</h3>
-              {activeAmbience && (
-                <span className="text-xs text-primary">Playing</span>
-              )}
-            </div>
-            <div className="grid grid-cols-4 gap-2">
-              {[
-                { id: "rain", icon: CloudRain, label: "Rain" },
-                { id: "cafe", icon: Coffee, label: "Cafe" },
-                { id: "wind", icon: Wind, label: "Wind" },
-                { id: "fire", icon: Flame, label: "Fire" },
-              ].map(item => (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveAmbience(prev => prev === item.id ? null : item.id)}
-                  data-testid={`button-ambience-${item.id}`}
-                  className={`flex flex-col items-center gap-1 p-3 border hover-elevate active-elevate-2 ${
-                    activeAmbience === item.id 
-                      ? "border-primary bg-accent" 
-                      : "border-border"
-                  }`}
-                >
-                  <item.icon className={`w-5 h-5 ${activeAmbience === item.id ? "text-primary" : "text-foreground"}`} />
-                  <span className="text-[10px] text-muted-foreground">{item.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="col-span-6 md:col-span-4 border border-border bg-card jp-paper p-8">
-            <h3 className="text-lg font-serif tracking-tight text-foreground uppercase mb-4">Hydration</h3>
-            <div className="flex items-center justify-center gap-4 mb-3">
-              <Button
-                onClick={() => setWaterCount(prev => Math.max(0, prev - 1))}
-                variant="outline"
-                size="icon"
-                data-testid="button-water-minus"
-              >
-                <Minus className="w-4 h-4" />
-              </Button>
-              <div className="w-16 h-16 border-2 border-border flex items-center justify-center">
-                <Droplets className={`w-8 h-8 ${waterCount >= 8 ? "text-primary" : "text-foreground"}`} />
-              </div>
-              <Button
-                onClick={() => setWaterCount(prev => Math.min(8, prev + 1))}
-                variant="outline"
-                size="icon"
-                data-testid="button-water-plus"
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-            <p className="text-center text-sm text-muted-foreground">
-              <span className={`font-medium font-mono ${waterCount >= 8 ? "text-primary" : "text-foreground"}`}>{waterCount}</span> / 8 glasses
-            </p>
-          </div>
-
-          <div className="col-span-6 md:col-span-4 border border-border bg-card jp-paper p-8 flex flex-col items-center justify-center">
-            <div className="w-20 h-20 border-2 border-foreground flex items-center justify-center mb-3">
-              <span className="text-3xl font-light text-foreground font-mono">{daysRemaining}</span>
-            </div>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest text-center">
-              Days Remaining
-            </p>
-          </div>
-
-          <div className="col-span-12 md:col-span-4 border border-border bg-card jp-paper p-8">
-            <h3 className="text-lg font-serif tracking-tight text-foreground uppercase mb-4">Today's Sessions</h3>
-            <div className="flex items-center gap-2 flex-wrap">
-              {Array.from({ length: currentSettings.sessionsUntilLongBreak }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`w-8 h-8 flex items-center justify-center text-xs font-medium font-mono ${
-                    i < todayWorkSessions.length 
-                      ? "bg-foreground text-background" 
-                      : "border border-border text-muted-foreground"
-                  }`}
-                >
-                  {i + 1}
+          <div className="col-span-12 md:col-span-7 border border-border bg-card jp-paper p-8 space-y-8">
+            <div>
+              <h3 className="text-lg font-serif tracking-tight text-foreground mb-6">Today's Progress</h3>
+              <div className="grid grid-cols-3 gap-6">
+                <div className="text-center">
+                  <div className="text-4xl font-light text-foreground font-mono tabular-nums">{month}/{day}</div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-widest mt-2">Date</div>
                 </div>
-              ))}
-              {todayWorkSessions.length > currentSettings.sessionsUntilLongBreak && (
-                <span className="text-sm text-primary font-medium">+{todayWorkSessions.length - currentSettings.sessionsUntilLongBreak}</span>
-              )}
+                <div className="text-center">
+                  <div className="text-4xl font-light text-foreground font-mono tabular-nums">{todayWorkSessions.length}</div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-widest mt-2">Sessions</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-4xl font-light text-foreground font-mono tabular-nums">{todayFocusMinutes}</div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-widest mt-2">Minutes</div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="jp-divider" />
+            
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-serif tracking-tight text-foreground">Ambience</h3>
+                {activeAmbience && (
+                  <span className="text-xs text-primary">Playing</span>
+                )}
+              </div>
+              <div className="grid grid-cols-4 gap-3">
+                {[
+                  { id: "rain", icon: CloudRain, label: "Rain" },
+                  { id: "cafe", icon: Coffee, label: "Cafe" },
+                  { id: "wind", icon: Wind, label: "Wind" },
+                  { id: "fire", icon: Flame, label: "Fire" },
+                ].map(item => (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveAmbience(prev => prev === item.id ? null : item.id)}
+                    data-testid={`button-ambience-${item.id}`}
+                    className={`flex flex-col items-center gap-2 p-4 border hover-elevate active-elevate-2 ${
+                      activeAmbience === item.id 
+                        ? "border-l-4 border-l-primary border-primary bg-accent/30" 
+                        : "border-border"
+                    }`}
+                  >
+                    <item.icon className={`w-5 h-5 ${activeAmbience === item.id ? "text-primary" : "text-muted-foreground"}`} />
+                    <span className="text-xs text-muted-foreground">{item.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -601,7 +563,7 @@ export default function Dashboard() {
                     <button
                       onClick={(e) => { e.stopPropagation(); toggleTaskMutation.mutate(task.id); }}
                       data-testid={`button-toggle-task-${task.id}`}
-                      className="w-4 h-4 border-2 border-border flex-shrink-0 flex items-center justify-center hover:border-foreground"
+                      className="w-4 h-4 border-2 border-border flex-shrink-0 flex items-center justify-center hover-elevate active-elevate-2"
                     >
                       {task.completed && <Check className="w-3 h-3" />}
                     </button>
@@ -627,9 +589,9 @@ export default function Dashboard() {
                     <button
                       onClick={(e) => { e.stopPropagation(); deleteTaskMutation.mutate(task.id); }}
                       data-testid={`button-delete-task-${task.id}`}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 hover-elevate active-elevate-2"
                     >
-                      <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
+                      <Trash2 className="w-4 h-4 text-muted-foreground" />
                     </button>
                   </div>
                 ))
@@ -662,10 +624,10 @@ export default function Dashboard() {
                     key={num}
                     onClick={() => setNewTaskPomodoros(num)}
                     data-testid={`button-pomodoros-${num}`}
-                    className={`w-6 h-6 text-xs font-mono transition-all ${
+                    className={`w-6 h-6 text-xs font-mono hover-elevate active-elevate-2 ${
                       newTaskPomodoros === num 
                         ? "bg-foreground text-background" 
-                        : "border border-border hover:border-foreground"
+                        : "border border-border"
                     }`}
                   >
                     {num}
@@ -675,9 +637,12 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="col-span-12 md:col-span-5 flex flex-col gap-4">
-            <div className="border border-border bg-card jp-paper p-4 flex items-center justify-center gap-3">
-              <ThemeToggle />
+          <div className="col-span-12 md:col-span-5 border border-border bg-card jp-paper p-6 space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-serif tracking-tight text-foreground">Controls</h3>
+            </div>
+            
+            <div className="flex items-center gap-4">
               <Button
                 onClick={() => updateSettingsMutation.mutate({ soundEnabled: !currentSettings.soundEnabled })}
                 variant="outline"
@@ -687,16 +652,20 @@ export default function Dashboard() {
               >
                 {currentSettings.soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
               </Button>
+              <span className="text-sm text-muted-foreground">
+                {currentSettings.soundEnabled ? "Sound On" : "Sound Off"}
+              </span>
             </div>
+            
             <button
               onClick={() => setShowSettings(!showSettings)}
               data-testid="button-settings"
-              className={`border bg-card jp-paper p-4 flex items-center justify-center gap-2 hover-elevate active-elevate-2 ${
-                showSettings ? "border-primary bg-accent" : "border-border"
+              className={`w-full border p-4 flex items-center justify-center gap-2 hover-elevate active-elevate-2 ${
+                showSettings ? "border-l-4 border-l-primary border-primary bg-accent/30" : "border-border"
               }`}
             >
-              <Settings className="w-5 h-5 text-foreground" />
-              <span className="text-xs text-muted-foreground uppercase tracking-wider">Settings</span>
+              <Settings className="w-5 h-5 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground uppercase tracking-wider">Timer Settings</span>
             </button>
           </div>
 

@@ -267,7 +267,8 @@
   /* Japanese zen divider */
   .jp-divider {
     height: 1px;
-    background: linear-gradient(to right, transparent, hsl(var(--border)), transparent);
+    background: linear-gradient(90deg, transparent, hsl(var(--border)), transparent);
+    margin: 2rem 0;
   }
 
   /* Japanese minimal active indicator */
