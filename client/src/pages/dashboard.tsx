@@ -25,12 +25,125 @@ import {
 } from "lucide-react";
 import type { Task, Settings as SettingsType, Session, SessionType } from "@shared/schema";
 
-const AMBIENT_SOUNDS: Record<string, string> = {
-  rain: "https://cdn.freesound.org/previews/531/531947_5765502-lq.mp3",
-  cafe: "https://cdn.freesound.org/previews/454/454818_4068345-lq.mp3",
-  wind: "https://cdn.freesound.org/previews/244/244486_4284968-lq.mp3",
-  fire: "https://cdn.freesound.org/previews/499/499781_4921277-lq.mp3",
-};
+class AmbientSoundGenerator {
+  private audioContext: AudioContext | null = null;
+  private nodes: AudioNode[] = [];
+  private gainNode: GainNode | null = null;
+
+  start(type: string) {
+    this.stop();
+    this.audioContext = new AudioContext();
+    this.gainNode = this.audioContext.createGain();
+    this.gainNode.gain.value = 0.15;
+    this.gainNode.connect(this.audioContext.destination);
+
+    switch (type) {
+      case "rain":
+        this.createRain();
+        break;
+      case "cafe":
+        this.createCafe();
+        break;
+      case "wind":
+        this.createWind();
+        break;
+      case "fire":
+        this.createFire();
+        break;
+    }
+  }
+
+  private createNoise(): AudioBufferSourceNode {
+    const bufferSize = this.audioContext!.sampleRate * 2;
+    const buffer = this.audioContext!.createBuffer(1, bufferSize, this.audioContext!.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    const noise = this.audioContext!.createBufferSource();
+    noise.buffer = buffer;
+    noise.loop = true;
+    return noise;
+  }
+
+  private createRain() {
+    const noise = this.createNoise();
+    const filter = this.audioContext!.createBiquadFilter();
+    filter.type = "highpass";
+    filter.frequency.value = 1000;
+    const filter2 = this.audioContext!.createBiquadFilter();
+    filter2.type = "lowpass";
+    filter2.frequency.value = 8000;
+    noise.connect(filter);
+    filter.connect(filter2);
+    filter2.connect(this.gainNode!);
+    noise.start();
+    this.nodes.push(noise);
+  }
+
+  private createCafe() {
+    const noise = this.createNoise();
+    const filter = this.audioContext!.createBiquadFilter();
+    filter.type = "bandpass";
+    filter.frequency.value = 800;
+    filter.Q.value = 0.5;
+    const gain = this.audioContext!.createGain();
+    gain.gain.value = 0.4;
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.gainNode!);
+    noise.start();
+    this.nodes.push(noise);
+  }
+
+  private createWind() {
+    const noise = this.createNoise();
+    const filter = this.audioContext!.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = 400;
+    const lfo = this.audioContext!.createOscillator();
+    lfo.frequency.value = 0.2;
+    const lfoGain = this.audioContext!.createGain();
+    lfoGain.gain.value = 200;
+    lfo.connect(lfoGain);
+    lfoGain.connect(filter.frequency);
+    lfo.start();
+    noise.connect(filter);
+    filter.connect(this.gainNode!);
+    noise.start();
+    this.nodes.push(noise, lfo);
+  }
+
+  private createFire() {
+    const noise = this.createNoise();
+    const filter = this.audioContext!.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = 600;
+    const filter2 = this.audioContext!.createBiquadFilter();
+    filter2.type = "highpass";
+    filter2.frequency.value = 100;
+    noise.connect(filter);
+    filter.connect(filter2);
+    filter2.connect(this.gainNode!);
+    noise.start();
+    this.nodes.push(noise);
+  }
+
+  stop() {
+    this.nodes.forEach(node => {
+      if (node instanceof AudioBufferSourceNode || node instanceof OscillatorNode) {
+        try { node.stop(); } catch {}
+      }
+    });
+    this.nodes = [];
+    if (this.audioContext) {
+      this.audioContext.close();
+      this.audioContext = null;
+    }
+  }
+}
+
+const ambientGenerator = new AmbientSoundGenerator();
 
 export default function Dashboard() {
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(() => {
@@ -56,7 +169,6 @@ export default function Dashboard() {
   const [showSettings, setShowSettings] = useState(false);
   const [completedSessionsCount, setCompletedSessionsCount] = useState(0);
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const notificationAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const { data: tasks = [] } = useQuery<Task[]>({
@@ -92,21 +204,12 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (activeAmbience && currentSettings.soundEnabled) {
-      if (!audioRef.current) {
-        audioRef.current = new Audio();
-        audioRef.current.loop = true;
-        audioRef.current.volume = 0.3;
-      }
-      audioRef.current.src = AMBIENT_SOUNDS[activeAmbience];
-      audioRef.current.play().catch(() => {});
-    } else if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
+      ambientGenerator.start(activeAmbience);
+    } else {
+      ambientGenerator.stop();
     }
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
+      ambientGenerator.stop();
     };
   }, [activeAmbience, currentSettings.soundEnabled]);
 
@@ -150,9 +253,9 @@ export default function Dashboard() {
     mutationFn: async (id: string) => {
       return apiRequest("DELETE", `/api/tasks/${id}`);
     },
-    onSuccess: () => {
+    onSuccess: (_, deletedId) => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-      if (currentTaskId === id) {
+      if (currentTaskId === deletedId) {
         setCurrentTaskId(null);
       }
     },
