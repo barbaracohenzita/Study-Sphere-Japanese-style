@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -17,19 +17,47 @@ import {
   Flame,
   Settings,
   Droplets,
-  Minus
+  Minus,
+  Target,
+  Clock,
+  Volume2,
+  VolumeX
 } from "lucide-react";
 import type { Task, Settings as SettingsType, Session, SessionType } from "@shared/schema";
 
+const AMBIENT_SOUNDS: Record<string, string> = {
+  rain: "https://cdn.freesound.org/previews/531/531947_5765502-lq.mp3",
+  cafe: "https://cdn.freesound.org/previews/454/454818_4068345-lq.mp3",
+  wind: "https://cdn.freesound.org/previews/244/244486_4284968-lq.mp3",
+  fire: "https://cdn.freesound.org/previews/499/499781_4921277-lq.mp3",
+};
+
 export default function Dashboard() {
-  const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
+  const [currentTaskId, setCurrentTaskId] = useState<string | null>(() => {
+    return localStorage.getItem("studyflow_currentTaskId") || null;
+  });
   const [newTaskTitle, setNewTaskTitle] = useState("");
-  const [sessionType, setSessionType] = useState<SessionType>("work");
-  const [timerState, setTimerState] = useState<"idle" | "running" | "paused">("idle");
-  const [timeRemaining, setTimeRemaining] = useState(25 * 60);
-  const [waterCount, setWaterCount] = useState(2);
+  const [newTaskPomodoros, setNewTaskPomodoros] = useState(1);
+  const [sessionType, setSessionType] = useState<SessionType>(() => {
+    return (localStorage.getItem("studyflow_sessionType") as SessionType) || "work";
+  });
+  const [timerState, setTimerState] = useState<"idle" | "running" | "paused">(() => {
+    return (localStorage.getItem("studyflow_timerState") as "idle" | "running" | "paused") || "idle";
+  });
+  const [timeRemaining, setTimeRemaining] = useState(() => {
+    const saved = localStorage.getItem("studyflow_timeRemaining");
+    return saved ? parseInt(saved, 10) : 25 * 60;
+  });
+  const [waterCount, setWaterCount] = useState(() => {
+    const saved = localStorage.getItem("studyflow_waterCount");
+    return saved ? parseInt(saved, 10) : 0;
+  });
   const [activeAmbience, setActiveAmbience] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [completedSessionsCount, setCompletedSessionsCount] = useState(0);
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const notificationAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const { data: tasks = [] } = useQuery<Task[]>({
     queryKey: ["/api/tasks"],
@@ -54,6 +82,34 @@ export default function Dashboard() {
 
   const currentSettings = settings || defaultSettings;
 
+  useEffect(() => {
+    localStorage.setItem("studyflow_currentTaskId", currentTaskId || "");
+    localStorage.setItem("studyflow_sessionType", sessionType);
+    localStorage.setItem("studyflow_timerState", timerState);
+    localStorage.setItem("studyflow_timeRemaining", timeRemaining.toString());
+    localStorage.setItem("studyflow_waterCount", waterCount.toString());
+  }, [currentTaskId, sessionType, timerState, timeRemaining, waterCount]);
+
+  useEffect(() => {
+    if (activeAmbience && currentSettings.soundEnabled) {
+      if (!audioRef.current) {
+        audioRef.current = new Audio();
+        audioRef.current.loop = true;
+        audioRef.current.volume = 0.3;
+      }
+      audioRef.current.src = AMBIENT_SOUNDS[activeAmbience];
+      audioRef.current.play().catch(() => {});
+    } else if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    };
+  }, [activeAmbience, currentSettings.soundEnabled]);
+
   const getDuration = useCallback((type: SessionType) => {
     switch (type) {
       case "work": return currentSettings.workDuration * 60;
@@ -62,25 +118,15 @@ export default function Dashboard() {
     }
   }, [currentSettings]);
 
-  useEffect(() => {
-    setTimeRemaining(getDuration(sessionType));
-  }, [sessionType, getDuration]);
-
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | null = null;
-    if (timerState === "running") {
-      interval = setInterval(() => {
-        setTimeRemaining(prev => {
-          if (prev <= 1) {
-            setTimerState("idle");
-            return getDuration(sessionType);
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => { if (interval) clearInterval(interval); };
-  }, [timerState, sessionType, getDuration]);
+  const createSessionMutation = useMutation({
+    mutationFn: async (data: { type: SessionType; duration: number; taskId?: string }) => {
+      return apiRequest("POST", "/api/sessions", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+    },
+  });
 
   const addTaskMutation = useMutation({
     mutationFn: async (data: { title: string; estimatedPomodoros: number }) => {
@@ -106,6 +152,9 @@ export default function Dashboard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      if (currentTaskId === id) {
+        setCurrentTaskId(null);
+      }
     },
   });
 
@@ -118,11 +167,79 @@ export default function Dashboard() {
     },
   });
 
+  const handleSessionComplete = useCallback(() => {
+    const duration = getDuration(sessionType);
+    
+    if (currentSettings.soundEnabled) {
+      if (!notificationAudioRef.current) {
+        notificationAudioRef.current = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleQoOF4nT2Kl5IRkWfMnPrYM8IiBxtr+2jFMqKG+yvLGPXy0ue7vBsIlbMDN5uMCxj18xNnm3v7KRYjM4e7i/spFiNDl6t7+ykmM0OXq3v7KSYzQ5ere/spJjNDl6t7+ykmM0OA==");
+      }
+      notificationAudioRef.current.play().catch(() => {});
+    }
+
+    if ("Notification" in window && Notification.permission === "granted") {
+      new Notification(sessionType === "work" ? "Focus session complete!" : "Break is over!", {
+        body: sessionType === "work" ? "Time for a break." : "Ready to focus again?",
+        icon: "/favicon.ico"
+      });
+    }
+
+    createSessionMutation.mutate({
+      type: sessionType,
+      duration,
+      taskId: sessionType === "work" ? currentTaskId || undefined : undefined
+    });
+
+    const newCount = sessionType === "work" ? completedSessionsCount + 1 : completedSessionsCount;
+    setCompletedSessionsCount(newCount);
+
+    if (sessionType === "work") {
+      if (newCount % currentSettings.sessionsUntilLongBreak === 0) {
+        setSessionType("longBreak");
+        setTimeRemaining(currentSettings.longBreakDuration * 60);
+      } else {
+        setSessionType("shortBreak");
+        setTimeRemaining(currentSettings.shortBreakDuration * 60);
+      }
+    } else {
+      setSessionType("work");
+      setTimeRemaining(currentSettings.workDuration * 60);
+    }
+    setTimerState("idle");
+  }, [sessionType, currentSettings, currentTaskId, completedSessionsCount, createSessionMutation, getDuration]);
+
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | null = null;
+    if (timerState === "running") {
+      interval = setInterval(() => {
+        setTimeRemaining(prev => {
+          if (prev <= 1) {
+            handleSessionComplete();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => { if (interval) clearInterval(interval); };
+  }, [timerState, handleSessionComplete]);
+
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
   const handleAddTask = () => {
     if (newTaskTitle.trim()) {
-      addTaskMutation.mutate({ title: newTaskTitle.trim(), estimatedPomodoros: 1 });
+      addTaskMutation.mutate({ title: newTaskTitle.trim(), estimatedPomodoros: newTaskPomodoros });
       setNewTaskTitle("");
+      setNewTaskPomodoros(1);
     }
+  };
+
+  const handleSelectTask = (id: string) => {
+    setCurrentTaskId(prev => prev === id ? null : id);
   };
 
   const formatTime = (seconds: number) => {
@@ -149,10 +266,18 @@ export default function Dashboard() {
     const sessionDate = new Date(s.completedAt);
     sessionDate.setHours(0, 0, 0, 0);
     return sessionDate.getTime() === today.getTime() && s.type === "work";
-  }).length;
+  });
+
+  const todayFocusMinutes = todayWorkSessions.reduce((acc, s) => acc + Math.floor(s.duration / 60), 0);
 
   const endOfYear = new Date(now.getFullYear(), 11, 31);
   const daysRemaining = Math.ceil((endOfYear.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+  const currentTask = currentTaskId ? tasks.find(t => t.id === currentTaskId) : null;
+
+  const recentSessions = [...sessions].sort((a, b) => 
+    new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
+  ).slice(0, 5);
 
   return (
     <div className="min-h-screen bg-background p-6 md:p-10">
@@ -160,9 +285,9 @@ export default function Dashboard() {
         <div className="grid grid-cols-12 gap-4 auto-rows-min">
           
           <div className="col-span-12 md:col-span-4 neo-card rounded-3xl p-6">
-            <div className="flex gap-2 mb-6 justify-center">
+            <div className="flex gap-2 mb-4 justify-center">
               <Button
-                onClick={() => { setSessionType("work"); setTimerState("idle"); }}
+                onClick={() => { setSessionType("work"); setTimerState("idle"); setTimeRemaining(getDuration("work")); }}
                 variant="ghost"
                 data-testid="button-session-focus"
                 className={`rounded-full px-6 ${sessionType === "work" ? "neo-pressed" : "neo-button"}`}
@@ -170,7 +295,7 @@ export default function Dashboard() {
                 Focus
               </Button>
               <Button
-                onClick={() => { setSessionType("shortBreak"); setTimerState("idle"); }}
+                onClick={() => { setSessionType("shortBreak"); setTimerState("idle"); setTimeRemaining(getDuration("shortBreak")); }}
                 variant="ghost"
                 data-testid="button-session-break"
                 className={`rounded-full px-6 ${sessionType !== "work" ? "neo-pressed" : "neo-button"}`}
@@ -179,13 +304,32 @@ export default function Dashboard() {
               </Button>
             </div>
 
+            {currentTask && sessionType === "work" && (
+              <div className="text-center mb-4 neo-inset rounded-xl px-3 py-2">
+                <div className="flex items-center justify-center gap-2">
+                  <Target className="w-4 h-4 text-primary" />
+                  <span className="text-sm text-foreground font-medium truncate">{currentTask.title}</span>
+                </div>
+                <div className="flex items-center justify-center gap-1 mt-1">
+                  {Array.from({ length: currentTask.estimatedPomodoros }).map((_, i) => (
+                    <div
+                      key={i}
+                      className={`w-2 h-2 rounded-full ${
+                        i < currentTask.completedPomodoros ? "bg-primary" : "bg-muted"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="relative flex justify-center mb-6">
               <svg width="200" height="200" viewBox="0 0 200 200" className="transform -rotate-90">
                 <circle cx="100" cy="100" r="90" fill="none" stroke="hsl(var(--muted))" strokeWidth="8" className="opacity-30" />
                 <circle
                   cx="100" cy="100" r="90"
                   fill="none"
-                  stroke="hsl(var(--foreground))"
+                  stroke={sessionType === "work" ? "hsl(var(--foreground))" : "hsl(var(--primary))"}
                   strokeWidth="8"
                   strokeLinecap="round"
                   strokeDasharray={circumference}
@@ -198,7 +342,7 @@ export default function Dashboard() {
                   {formatTime(timeRemaining)}
                 </span>
                 <span className="text-xs text-muted-foreground uppercase tracking-widest mt-1">
-                  {timerState === "running" ? "Running" : timerState === "paused" ? "Paused" : "Ready"}
+                  {timerState === "running" ? "Running" : timerState === "paused" ? "Paused" : sessionType === "work" ? "Focus" : "Break"}
                 </span>
               </div>
             </div>
@@ -232,10 +376,19 @@ export default function Dashboard() {
             <div className="text-2xl text-muted-foreground font-light">
               {displayHours}{timeOfDay}
             </div>
+            <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+              <Clock className="w-4 h-4" />
+              <span>{todayFocusMinutes} min focused today</span>
+            </div>
           </div>
 
           <div className="col-span-6 md:col-span-4 neo-card rounded-3xl p-5">
-            <h3 className="text-xs text-muted-foreground uppercase tracking-wider mb-4">Ambience</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xs text-muted-foreground uppercase tracking-wider">Ambience</h3>
+              {activeAmbience && (
+                <span className="text-xs text-primary">Playing</span>
+              )}
+            </div>
             <div className="grid grid-cols-4 gap-2">
               {[
                 { id: "rain", icon: CloudRain, label: "Rain" },
@@ -251,7 +404,7 @@ export default function Dashboard() {
                     activeAmbience === item.id ? "neo-pressed" : "neo-button"
                   }`}
                 >
-                  <item.icon className="w-5 h-5 text-foreground" />
+                  <item.icon className={`w-5 h-5 ${activeAmbience === item.id ? "text-primary" : "text-foreground"}`} />
                   <span className="text-[10px] text-muted-foreground">{item.label}</span>
                 </button>
               ))}
@@ -271,7 +424,7 @@ export default function Dashboard() {
                 <Minus className="w-4 h-4" />
               </Button>
               <div className="neo-inset p-4 rounded-2xl">
-                <Droplets className="w-8 h-8 text-foreground" />
+                <Droplets className={`w-8 h-8 ${waterCount >= 8 ? "text-primary" : "text-foreground"}`} />
               </div>
               <Button
                 onClick={() => setWaterCount(prev => Math.min(8, prev + 1))}
@@ -284,7 +437,7 @@ export default function Dashboard() {
               </Button>
             </div>
             <p className="text-center text-sm text-muted-foreground">
-              Drink water: <span className="text-foreground font-medium">{waterCount} / 8</span>
+              Drink water: <span className={`font-medium ${waterCount >= 8 ? "text-primary" : "text-foreground"}`}>{waterCount} / 8</span>
             </p>
           </div>
 
@@ -304,12 +457,15 @@ export default function Dashboard() {
                 <div
                   key={i}
                   className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-medium ${
-                    i < todayWorkSessions ? "bg-foreground text-background" : "neo-inset text-muted-foreground"
+                    i < todayWorkSessions.length ? "bg-foreground text-background" : "neo-inset text-muted-foreground"
                   }`}
                 >
                   {i + 1}
                 </div>
               ))}
+              {todayWorkSessions.length > currentSettings.sessionsUntilLongBreak && (
+                <span className="text-sm text-primary font-medium">+{todayWorkSessions.length - currentSettings.sessionsUntilLongBreak}</span>
+              )}
             </div>
           </div>
 
@@ -324,19 +480,44 @@ export default function Dashboard() {
                 <p className="text-sm text-muted-foreground text-center py-4">No tasks yet</p>
               ) : (
                 incompleteTasks.map(task => (
-                  <div key={task.id} className="neo-inset rounded-xl p-3 flex items-center gap-3 group">
+                  <div
+                    key={task.id}
+                    onClick={() => handleSelectTask(task.id)}
+                    data-testid={`task-item-${task.id}`}
+                    className={`neo-inset rounded-xl p-3 flex items-center gap-3 group cursor-pointer transition-all ${
+                      currentTaskId === task.id ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""
+                    }`}
+                  >
                     <button
-                      onClick={() => toggleTaskMutation.mutate(task.id)}
+                      onClick={(e) => { e.stopPropagation(); toggleTaskMutation.mutate(task.id); }}
                       data-testid={`button-toggle-task-${task.id}`}
                       className="neo-button w-5 h-5 rounded flex-shrink-0 flex items-center justify-center"
                     >
                       {task.completed && <Check className="w-3 h-3" />}
                     </button>
-                    <span className="flex-1 text-sm text-foreground truncate">{task.title}</span>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm text-foreground truncate block">{task.title}</span>
+                      <div className="flex items-center gap-1 mt-1">
+                        {Array.from({ length: task.estimatedPomodoros }).map((_, i) => (
+                          <div
+                            key={i}
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              i < task.completedPomodoros ? "bg-primary" : "bg-muted-foreground/30"
+                            }`}
+                          />
+                        ))}
+                        <span className="text-[10px] text-muted-foreground ml-1">
+                          {task.completedPomodoros}/{task.estimatedPomodoros}
+                        </span>
+                      </div>
+                    </div>
+                    {currentTaskId === task.id && (
+                      <Target className="w-4 h-4 text-primary flex-shrink-0" />
+                    )}
                     <button
-                      onClick={() => deleteTaskMutation.mutate(task.id)}
+                      onClick={(e) => { e.stopPropagation(); deleteTaskMutation.mutate(task.id); }}
                       data-testid={`button-delete-task-${task.id}`}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
                     >
                       <Trash2 className="w-4 h-4 text-muted-foreground" />
                     </button>
@@ -345,39 +526,89 @@ export default function Dashboard() {
               )}
             </div>
 
-            <div className="neo-inset rounded-xl p-2 flex items-center gap-2">
-              <Input
-                value={newTaskTitle}
-                onChange={(e) => setNewTaskTitle(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleAddTask()}
-                placeholder="Add a task..."
-                data-testid="input-task-title"
-                className="flex-1 bg-transparent border-0 h-8 text-sm focus-visible:ring-0"
-              />
-              <Button
-                onClick={handleAddTask}
-                variant="ghost"
-                size="icon"
-                data-testid="button-add-task"
-                className="neo-button w-8 h-8 rounded-lg"
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
+            <div className="neo-inset rounded-xl p-2">
+              <div className="flex items-center gap-2 mb-2">
+                <Input
+                  value={newTaskTitle}
+                  onChange={(e) => setNewTaskTitle(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAddTask()}
+                  placeholder="Add a task..."
+                  data-testid="input-task-title"
+                  className="flex-1 bg-transparent border-0 h-8 text-sm focus-visible:ring-0"
+                />
+                <Button
+                  onClick={handleAddTask}
+                  variant="ghost"
+                  size="icon"
+                  data-testid="button-add-task"
+                  className="neo-button w-8 h-8 rounded-lg flex-shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className="flex items-center gap-1 px-1">
+                <span className="text-[10px] text-muted-foreground mr-1">Est:</span>
+                {[1, 2, 3, 4].map(num => (
+                  <button
+                    key={num}
+                    onClick={() => setNewTaskPomodoros(num)}
+                    data-testid={`button-pomodoros-${num}`}
+                    className={`w-6 h-6 rounded text-xs font-medium transition-all ${
+                      newTaskPomodoros === num ? "bg-foreground text-background" : "neo-button-sm"
+                    }`}
+                  >
+                    {num}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
           <div className="col-span-12 md:col-span-3 flex flex-col gap-4">
-            <div className="neo-card rounded-3xl p-4 flex-1 flex items-center justify-center">
+            <div className="neo-card rounded-3xl p-4 flex items-center justify-center gap-3">
               <ThemeToggle />
+              <Button
+                onClick={() => updateSettingsMutation.mutate({ soundEnabled: !currentSettings.soundEnabled })}
+                variant="ghost"
+                size="icon"
+                data-testid="button-toggle-sound"
+                className={`neo-button w-10 h-10 rounded-full ${!currentSettings.soundEnabled ? "opacity-50" : ""}`}
+              >
+                {currentSettings.soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+              </Button>
             </div>
             <button
               onClick={() => setShowSettings(!showSettings)}
               data-testid="button-settings"
-              className="neo-card rounded-3xl p-4 flex items-center justify-center hover:neo-pressed transition-all"
+              className={`neo-card rounded-3xl p-4 flex items-center justify-center transition-all ${showSettings ? "neo-pressed" : ""}`}
             >
               <Settings className="w-6 h-6 text-foreground" />
             </button>
           </div>
+
+          {recentSessions.length > 0 && (
+            <div className="col-span-12 neo-card rounded-3xl p-5">
+              <h3 className="text-xs text-muted-foreground uppercase tracking-wider mb-3">Recent Sessions</h3>
+              <div className="flex gap-3 overflow-x-auto pb-2">
+                {recentSessions.map(session => (
+                  <div key={session.id} className="neo-inset rounded-xl p-3 flex-shrink-0 min-w-[120px]">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className={`w-2 h-2 rounded-full ${
+                        session.type === "work" ? "bg-foreground" : "bg-primary"
+                      }`} />
+                      <span className="text-xs text-foreground capitalize">
+                        {session.type === "work" ? "Focus" : session.type === "shortBreak" ? "Short" : "Long"}
+                      </span>
+                    </div>
+                    <p className="text-lg font-light text-foreground">{Math.floor(session.duration / 60)}m</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {new Date(session.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
         </div>
 
