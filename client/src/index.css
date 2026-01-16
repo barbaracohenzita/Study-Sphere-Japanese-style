@@ -181,49 +181,29 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    background-blend-mode: soft-light;
+    background-size: 200px 200px;
+  }
+
+  .dark body {
+    background-blend-mode: overlay;
+  }
+
+  .font-serif {
+    font-family: var(--font-serif);
+  }
+
+  .font-mono {
+    font-family: var(--font-mono);
   }
 }
 
 @layer components {
-  /* Japanese Minimalist Card - uses borders and subtle background shifts */
+  /* Japanese Minimalist Card - uses borders only */
   .neo-card {
     background: hsl(var(--card));
     border: 1px solid hsl(var(--border));
-    transition: border-color 0.2s ease;
-  }
-
-  .neo-card:hover {
-    border-color: hsl(var(--foreground) / 0.2);
-  }
-
-  /* Japanese Minimalist Button - clean borders */
-  .neo-button {
-    background: hsl(var(--card));
-    border: 1px solid hsl(var(--border));
-    transition: border-color 0.15s ease, background-color 0.15s ease;
-  }
-
-  .neo-button:hover {
-    border-color: hsl(var(--foreground) / 0.25);
-    background: hsl(var(--accent));
-  }
-
-  .neo-button:active {
-    background: hsl(var(--muted));
-  }
-
-  .neo-button-sm {
-    background: hsl(var(--card));
-    border: 1px solid hsl(var(--border));
-    transition: border-color 0.15s ease;
-  }
-
-  .neo-button-sm:hover {
-    border-color: hsl(var(--foreground) / 0.2);
-  }
-
-  .neo-button-sm:active {
-    background: hsl(var(--muted));
   }
 
   /* Japanese Minimalist Inset - subtle background change */
@@ -245,7 +225,7 @@
     left: 0;
     top: 0;
     bottom: 0;
-    width: 3px;
+    width: 4px;
     background: hsl(var(--primary));
     border-radius: 0;
   }
@@ -285,7 +265,7 @@
 
   /* Japanese accent bar for emphasis */
   .jp-accent-bar {
-    border-left: 3px solid hsl(var(--primary));
+    border-left: 4px solid hsl(var(--primary));
     padding-left: 1rem;
   }
 
@@ -293,6 +273,27 @@
   .jp-divider {
     height: 1px;
     background: linear-gradient(to right, transparent, hsl(var(--border)), transparent);
+  }
+
+  /* Japanese minimal active indicator */
+  .jp-active {
+    position: relative;
+  }
+
+  .jp-active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: hsl(var(--primary));
+  }
+
+  /* Paper texture for cards */
+  .jp-paper {
+    background-color: hsl(var(--card));
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
   }
 }
 
