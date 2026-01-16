@@ -360,7 +360,7 @@ export default function Dashboard() {
 
   const incompleteTasks = tasks.filter(t => !t.completed);
   const progress = 1 - (timeRemaining / getDuration(sessionType));
-  const circumference = 2 * Math.PI * 90;
+  const circumference = 2 * Math.PI * 150;
   const strokeDashoffset = circumference * (1 - progress);
 
   const today = new Date();
@@ -399,14 +399,14 @@ export default function Dashboard() {
         
         <div className="grid grid-cols-12 gap-10 auto-rows-min">
           
-          <div className="col-span-12 md:col-span-5 border border-border bg-card jp-paper p-10">
-            <div className="flex gap-1 mb-6 justify-center border-b border-border pb-4">
+          <div className="col-span-12 md:col-span-5 border border-border bg-card jp-paper p-12">
+            <div className="flex gap-1 mb-8 justify-center">
               <button
                 onClick={() => { setSessionType("work"); setTimerState("idle"); setTimeRemaining(getDuration("work")); }}
                 data-testid="button-session-focus"
-                className={`px-4 py-2 text-sm tracking-wide hover-elevate ${
+                className={`px-4 py-2 text-sm tracking-wide hover-elevate active-elevate-2 ${
                   sessionType === "work" 
-                    ? "border-b-2 border-primary text-primary font-medium" 
+                    ? "border-b-2 border-foreground text-foreground font-medium" 
                     : "text-muted-foreground"
                 }`}
               >
@@ -415,9 +415,9 @@ export default function Dashboard() {
               <button
                 onClick={() => { setSessionType("shortBreak"); setTimerState("idle"); setTimeRemaining(getDuration("shortBreak")); }}
                 data-testid="button-session-break"
-                className={`px-4 py-2 text-sm tracking-wide hover-elevate ${
+                className={`px-4 py-2 text-sm tracking-wide hover-elevate active-elevate-2 ${
                   sessionType !== "work" 
-                    ? "border-b-2 border-primary text-primary font-medium" 
+                    ? "border-b-2 border-foreground text-foreground font-medium" 
                     : "text-muted-foreground"
                 }`}
               >
@@ -425,33 +425,14 @@ export default function Dashboard() {
               </button>
             </div>
 
-            {currentTask && sessionType === "work" && (
-              <div className="text-center mb-6 border-l-4 border-l-primary pl-4 py-2 bg-accent/30">
-                <div className="flex items-center gap-2">
-                  <Target className="w-4 h-4 text-primary" />
-                  <span className="text-sm text-foreground font-medium truncate">{currentTask.title}</span>
-                </div>
-                <div className="flex items-center gap-1 mt-2">
-                  {Array.from({ length: currentTask.estimatedPomodoros }).map((_, i) => (
-                    <div
-                      key={i}
-                      className={`w-2 h-2 ${
-                        i < currentTask.completedPomodoros ? "bg-primary" : "border border-border"
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
             <div className="relative flex justify-center mb-8">
-              <svg width="200" height="200" viewBox="0 0 200 200" className="transform -rotate-90">
-                <circle cx="100" cy="100" r="90" fill="none" stroke="hsl(var(--border))" strokeWidth="1" />
+              <svg width="320" height="320" viewBox="0 0 320 320" className="transform -rotate-90">
+                <circle cx="160" cy="160" r="150" fill="none" stroke="hsl(var(--border))" strokeWidth="1" />
                 <circle
-                  cx="100" cy="100" r="90"
+                  cx="160" cy="160" r="150"
                   fill="none"
-                  stroke={sessionType === "work" ? "hsl(var(--foreground))" : "hsl(var(--primary))"}
-                  strokeWidth="2"
+                  stroke={sessionType === "work" ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))"}
+                  strokeWidth="3"
                   strokeLinecap="square"
                   strokeDasharray={circumference}
                   strokeDashoffset={strokeDashoffset}
@@ -459,132 +440,131 @@ export default function Dashboard() {
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-6xl font-mono tabular-nums text-foreground tracking-tight" data-testid="text-timer-display">
+                <span className="text-7xl font-mono tabular-nums text-foreground tracking-tight" data-testid="text-timer-display">
                   {formatTime(timeRemaining)}
                 </span>
-                <span className="text-xs text-muted-foreground uppercase tracking-widest mt-2">
+                <span className="text-xs text-muted-foreground uppercase tracking-widest mt-3">
                   {timerState === "running" ? "Running" : timerState === "paused" ? "Paused" : sessionType === "work" ? "Focus" : "Break"}
                 </span>
               </div>
             </div>
 
-            <div className="flex justify-center gap-3">
+            <div className="jp-divider mb-8" />
+
+            <div className="flex justify-center gap-4">
               <button
                 onClick={() => setTimerState(prev => prev === "running" ? "paused" : "running")}
                 data-testid="button-timer-toggle"
-                className="w-12 h-12 border-2 border-foreground flex items-center justify-center hover-elevate active-elevate-2"
+                className="w-14 h-14 border-2 border-foreground flex items-center justify-center hover-elevate active-elevate-2"
+                title={timerState === "running" ? "Pause" : "Start"}
               >
-                {timerState === "running" ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
+                {timerState === "running" ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-0.5" />}
               </button>
               <button
                 onClick={() => { setTimerState("idle"); setTimeRemaining(getDuration(sessionType)); }}
                 data-testid="button-timer-reset"
-                className="w-12 h-12 border border-border flex items-center justify-center hover-elevate active-elevate-2"
+                className="w-14 h-14 border border-border flex items-center justify-center hover-elevate active-elevate-2"
+                title="Reset"
               >
-                <RotateCcw className="w-5 h-5" />
+                <RotateCcw className="w-5 h-5 text-muted-foreground" />
+              </button>
+              <button
+                onClick={() => updateSettingsMutation.mutate({ soundEnabled: !currentSettings.soundEnabled })}
+                data-testid="button-toggle-sound"
+                className={`w-14 h-14 border border-border flex items-center justify-center hover-elevate active-elevate-2 ${!currentSettings.soundEnabled ? "opacity-50" : ""}`}
+                title={currentSettings.soundEnabled ? "Sound On" : "Sound Off"}
+              >
+                {currentSettings.soundEnabled ? <Volume2 className="w-5 h-5 text-muted-foreground" /> : <VolumeX className="w-5 h-5 text-muted-foreground" />}
+              </button>
+              <button
+                onClick={() => setShowSettings(!showSettings)}
+                data-testid="button-settings"
+                className={`w-14 h-14 border flex items-center justify-center hover-elevate active-elevate-2 ${
+                  showSettings ? "border-foreground bg-accent/20" : "border-border"
+                }`}
+                title="Settings"
+              >
+                <Settings className="w-5 h-5 text-muted-foreground" />
               </button>
             </div>
-          </div>
 
-          <div className="col-span-12 md:col-span-7 border border-border bg-card jp-paper p-8 space-y-8">
-            <div>
-              <h3 className="text-lg font-serif tracking-tight text-foreground mb-6">Today's Progress</h3>
-              <div className="grid grid-cols-3 gap-6">
-                <div className="text-center">
-                  <div className="text-4xl font-light text-foreground font-mono tabular-nums">{month}/{day}</div>
-                  <div className="text-xs text-muted-foreground uppercase tracking-widest mt-2">Date</div>
+            {currentTask && sessionType === "work" && (
+              <div className="mt-8 pt-6 border-t border-border">
+                <div className="flex items-center gap-2 text-center justify-center">
+                  <Target className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground truncate">{currentTask.title}</span>
                 </div>
-                <div className="text-center">
-                  <div className="text-4xl font-light text-foreground font-mono tabular-nums">{todayWorkSessions.length}</div>
-                  <div className="text-xs text-muted-foreground uppercase tracking-widest mt-2">Sessions</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-4xl font-light text-foreground font-mono tabular-nums">{todayFocusMinutes}</div>
-                  <div className="text-xs text-muted-foreground uppercase tracking-widest mt-2">Minutes</div>
+                <div className="flex items-center gap-1 mt-2 justify-center">
+                  {Array.from({ length: currentTask.estimatedPomodoros }).map((_, i) => (
+                    <div
+                      key={i}
+                      className={`w-2 h-2 ${
+                        i < currentTask.completedPomodoros ? "bg-foreground" : "border border-border"
+                      }`}
+                    />
+                  ))}
                 </div>
               </div>
-            </div>
-            
-            <div className="jp-divider" />
-            
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-serif tracking-tight text-foreground">Ambience</h3>
-                {activeAmbience && (
-                  <span className="text-xs text-primary">Playing</span>
-                )}
+            )}
+
+            <div className="mt-8 pt-6 border-t border-border grid grid-cols-2 gap-4">
+              <div className="text-center">
+                <div className="text-3xl font-light text-foreground font-mono tabular-nums">{todayWorkSessions.length}</div>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Sessions</div>
               </div>
-              <div className="grid grid-cols-4 gap-3">
-                {[
-                  { id: "rain", icon: CloudRain, label: "Rain" },
-                  { id: "cafe", icon: Coffee, label: "Cafe" },
-                  { id: "wind", icon: Wind, label: "Wind" },
-                  { id: "fire", icon: Flame, label: "Fire" },
-                ].map(item => (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveAmbience(prev => prev === item.id ? null : item.id)}
-                    data-testid={`button-ambience-${item.id}`}
-                    className={`flex flex-col items-center gap-2 p-4 border hover-elevate active-elevate-2 ${
-                      activeAmbience === item.id 
-                        ? "border-l-4 border-l-primary border-primary bg-accent/30" 
-                        : "border-border"
-                    }`}
-                  >
-                    <item.icon className={`w-5 h-5 ${activeAmbience === item.id ? "text-primary" : "text-muted-foreground"}`} />
-                    <span className="text-xs text-muted-foreground">{item.label}</span>
-                  </button>
-                ))}
+              <div className="text-center">
+                <div className="text-3xl font-light text-foreground font-mono tabular-nums">{todayFocusMinutes}</div>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Minutes</div>
               </div>
             </div>
           </div>
 
-          <div className="col-span-12 md:col-span-7 border border-border bg-card jp-paper p-8">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-serif tracking-tight text-foreground uppercase">Today's Focus</h3>
-              <span className="text-xs text-muted-foreground font-mono">{incompleteTasks.length} tasks</span>
+          <div className="col-span-12 md:col-span-7 border border-border bg-card jp-paper p-8 space-y-6">
+            <div className="border-b border-border pb-4 mb-2">
+              <h2 className="text-2xl font-serif tracking-tight text-foreground">Today's Focus</h2>
+              <p className="text-xs text-muted-foreground tracking-widest uppercase mt-1">{incompleteTasks.length} tasks remaining</p>
             </div>
             
-            <div className="space-y-2 max-h-48 overflow-y-auto mb-4">
+            <div className="space-y-3 max-h-64 overflow-y-auto">
               {incompleteTasks.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-6 border border-dashed border-border">No tasks yet</p>
+                <p className="text-sm text-muted-foreground text-center py-8 border border-dashed border-border">No tasks yet</p>
               ) : (
                 incompleteTasks.map(task => (
                   <div
                     key={task.id}
                     onClick={() => handleSelectTask(task.id)}
                     data-testid={`task-item-${task.id}`}
-                    className={`border p-3 flex items-center gap-3 group cursor-pointer hover-elevate ${
+                    className={`border p-4 flex items-center gap-4 group cursor-pointer hover-elevate ${
                       currentTaskId === task.id 
-                        ? "border-primary bg-accent/30 border-l-4 border-l-primary" 
+                        ? "border-foreground bg-accent/20 border-l-4 border-l-foreground" 
                         : "border-border"
                     }`}
                   >
                     <button
                       onClick={(e) => { e.stopPropagation(); toggleTaskMutation.mutate(task.id); }}
                       data-testid={`button-toggle-task-${task.id}`}
-                      className="w-4 h-4 border-2 border-border flex-shrink-0 flex items-center justify-center hover-elevate active-elevate-2"
+                      className="w-5 h-5 border-2 border-border flex-shrink-0 flex items-center justify-center hover-elevate active-elevate-2"
                     >
                       {task.completed && <Check className="w-3 h-3" />}
                     </button>
                     <div className="flex-1 min-w-0">
                       <span className="text-sm text-foreground truncate block">{task.title}</span>
-                      <div className="flex items-center gap-1 mt-1">
+                      <div className="flex items-center gap-1 mt-2">
                         {Array.from({ length: task.estimatedPomodoros }).map((_, i) => (
                           <div
                             key={i}
-                            className={`w-1.5 h-1.5 ${
-                              i < task.completedPomodoros ? "bg-primary" : "border border-border"
+                            className={`w-2 h-2 ${
+                              i < task.completedPomodoros ? "bg-foreground" : "border border-border"
                             }`}
                           />
                         ))}
-                        <span className="text-[10px] text-muted-foreground ml-1 font-mono">
+                        <span className="text-[10px] text-muted-foreground ml-2 font-mono">
                           {task.completedPomodoros}/{task.estimatedPomodoros}
                         </span>
                       </div>
                     </div>
                     {currentTaskId === task.id && (
-                      <Target className="w-4 h-4 text-primary flex-shrink-0" />
+                      <Target className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                     )}
                     <button
                       onClick={(e) => { e.stopPropagation(); deleteTaskMutation.mutate(task.id); }}
@@ -598,15 +578,15 @@ export default function Dashboard() {
               )}
             </div>
 
-            <div className="border border-border p-3">
-              <div className="flex items-center gap-2 mb-3">
+            <div className="border border-border p-4 mt-4">
+              <div className="flex items-center gap-3 mb-4">
                 <Input
                   value={newTaskTitle}
                   onChange={(e) => setNewTaskTitle(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleAddTask()}
                   placeholder="What will you focus on?"
                   data-testid="input-task-title"
-                  className="flex-1 border-0 h-8 text-sm focus-visible:ring-0 bg-transparent"
+                  className="flex-1 border-0 h-9 text-sm focus-visible:ring-0 bg-transparent"
                 />
                 <Button
                   onClick={handleAddTask}
@@ -617,14 +597,14 @@ export default function Dashboard() {
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Sessions:</span>
                 {[1, 2, 3, 4].map(num => (
                   <button
                     key={num}
                     onClick={() => setNewTaskPomodoros(num)}
                     data-testid={`button-pomodoros-${num}`}
-                    className={`w-6 h-6 text-xs font-mono hover-elevate active-elevate-2 ${
+                    className={`w-7 h-7 text-xs font-mono hover-elevate active-elevate-2 ${
                       newTaskPomodoros === num 
                         ? "bg-foreground text-background" 
                         : "border border-border"
@@ -635,55 +615,55 @@ export default function Dashboard() {
                 ))}
               </div>
             </div>
+
+            <div className="pt-4 border-t border-border">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs text-muted-foreground uppercase tracking-widest">Ambience</span>
+                {activeAmbience && (
+                  <span className="text-xs text-muted-foreground">Playing</span>
+                )}
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { id: "rain", icon: CloudRain },
+                  { id: "cafe", icon: Coffee },
+                  { id: "wind", icon: Wind },
+                  { id: "fire", icon: Flame },
+                ].map(item => (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveAmbience(prev => prev === item.id ? null : item.id)}
+                    data-testid={`button-ambience-${item.id}`}
+                    className={`flex items-center justify-center p-3 border hover-elevate active-elevate-2 ${
+                      activeAmbience === item.id 
+                        ? "border-foreground bg-accent/20" 
+                        : "border-border"
+                    }`}
+                    title={item.id.charAt(0).toUpperCase() + item.id.slice(1)}
+                  >
+                    <item.icon className={`w-4 h-4 ${activeAmbience === item.id ? "text-foreground" : "text-muted-foreground"}`} />
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
-          <div className="col-span-12 md:col-span-5 border border-border bg-card jp-paper p-6 space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-serif tracking-tight text-foreground">Controls</h3>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <Button
-                onClick={() => updateSettingsMutation.mutate({ soundEnabled: !currentSettings.soundEnabled })}
-                variant="outline"
-                size="icon"
-                data-testid="button-toggle-sound"
-                className={!currentSettings.soundEnabled ? "opacity-50" : ""}
-              >
-                {currentSettings.soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                {currentSettings.soundEnabled ? "Sound On" : "Sound Off"}
-              </span>
-            </div>
-            
-            <button
-              onClick={() => setShowSettings(!showSettings)}
-              data-testid="button-settings"
-              className={`w-full border p-4 flex items-center justify-center gap-2 hover-elevate active-elevate-2 ${
-                showSettings ? "border-l-4 border-l-primary border-primary bg-accent/30" : "border-border"
-              }`}
-            >
-              <Settings className="w-5 h-5 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground uppercase tracking-wider">Timer Settings</span>
-            </button>
-          </div>
 
           {recentSessions.length > 0 && (
-            <div className="col-span-12 border border-border bg-card jp-paper p-8">
-              <h3 className="text-lg font-serif tracking-tight text-foreground uppercase mb-4">Recent Sessions</h3>
+            <div className="col-span-12 border border-border bg-card jp-paper p-6">
+              <h3 className="text-sm font-serif tracking-tight text-muted-foreground uppercase mb-4">Recent Sessions</h3>
               <div className="flex gap-3 overflow-x-auto pb-2">
                 {recentSessions.map(session => (
-                  <div key={session.id} className="border border-border p-3 flex-shrink-0 min-w-[120px]">
+                  <div key={session.id} className="border border-border p-3 flex-shrink-0 min-w-[100px]">
                     <div className="flex items-center gap-2 mb-2">
                       <div className={`w-2 h-2 ${
-                        session.type === "work" ? "bg-foreground" : "bg-primary"
+                        session.type === "work" ? "bg-foreground" : "bg-muted-foreground"
                       }`} />
-                      <span className="text-xs text-foreground">
-                        {session.type === "work" ? "Focus" : session.type === "shortBreak" ? "Short" : "Long"}
+                      <span className="text-xs text-muted-foreground">
+                        {session.type === "work" ? "Focus" : "Break"}
                       </span>
                     </div>
-                    <p className="text-xl font-light text-foreground font-mono">{Math.floor(session.duration / 60)}m</p>
+                    <p className="text-lg font-light text-foreground font-mono">{Math.floor(session.duration / 60)}m</p>
                     <p className="text-[10px] text-muted-foreground font-mono mt-1">
                       {new Date(session.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
