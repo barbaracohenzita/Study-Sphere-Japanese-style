@@ -385,40 +385,46 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background p-6 md:p-10">
       <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-12 gap-4 auto-rows-min">
+        <div className="grid grid-cols-12 gap-6 auto-rows-min">
           
-          <div className="col-span-12 md:col-span-4 neo-card rounded-3xl p-6">
-            <div className="flex gap-2 mb-4 justify-center">
-              <Button
+          <div className="col-span-12 md:col-span-4 border border-border bg-card p-8">
+            <div className="flex gap-1 mb-6 justify-center border-b border-border pb-4">
+              <button
                 onClick={() => { setSessionType("work"); setTimerState("idle"); setTimeRemaining(getDuration("work")); }}
-                variant="ghost"
                 data-testid="button-session-focus"
-                className={`rounded-full px-6 ${sessionType === "work" ? "neo-pressed" : "neo-button"}`}
+                className={`px-4 py-2 text-sm tracking-wide transition-colors ${
+                  sessionType === "work" 
+                    ? "border-b-2 border-primary text-primary font-medium" 
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
               >
                 Focus
-              </Button>
-              <Button
+              </button>
+              <button
                 onClick={() => { setSessionType("shortBreak"); setTimerState("idle"); setTimeRemaining(getDuration("shortBreak")); }}
-                variant="ghost"
                 data-testid="button-session-break"
-                className={`rounded-full px-6 ${sessionType !== "work" ? "neo-pressed" : "neo-button"}`}
+                className={`px-4 py-2 text-sm tracking-wide transition-colors ${
+                  sessionType !== "work" 
+                    ? "border-b-2 border-primary text-primary font-medium" 
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
               >
                 Break
-              </Button>
+              </button>
             </div>
 
             {currentTask && sessionType === "work" && (
-              <div className="text-center mb-4 neo-inset rounded-xl px-3 py-2">
-                <div className="flex items-center justify-center gap-2">
+              <div className="text-center mb-6 border-l-4 border-l-primary pl-4 py-2 bg-accent/30">
+                <div className="flex items-center gap-2">
                   <Target className="w-4 h-4 text-primary" />
                   <span className="text-sm text-foreground font-medium truncate">{currentTask.title}</span>
                 </div>
-                <div className="flex items-center justify-center gap-1 mt-1">
+                <div className="flex items-center gap-1 mt-2">
                   {Array.from({ length: currentTask.estimatedPomodoros }).map((_, i) => (
                     <div
                       key={i}
-                      className={`w-2 h-2 rounded-full ${
-                        i < currentTask.completedPomodoros ? "bg-primary" : "bg-muted"
+                      className={`w-2 h-2 ${
+                        i < currentTask.completedPomodoros ? "bg-primary" : "border border-border"
                       }`}
                     />
                   ))}
@@ -426,66 +432,63 @@ export default function Dashboard() {
               </div>
             )}
 
-            <div className="relative flex justify-center mb-6">
+            <div className="relative flex justify-center mb-8">
               <svg width="200" height="200" viewBox="0 0 200 200" className="transform -rotate-90">
-                <circle cx="100" cy="100" r="90" fill="none" stroke="hsl(var(--muted))" strokeWidth="8" className="opacity-30" />
+                <circle cx="100" cy="100" r="90" fill="none" stroke="hsl(var(--border))" strokeWidth="2" />
                 <circle
                   cx="100" cy="100" r="90"
                   fill="none"
                   stroke={sessionType === "work" ? "hsl(var(--foreground))" : "hsl(var(--primary))"}
-                  strokeWidth="8"
-                  strokeLinecap="round"
+                  strokeWidth="3"
+                  strokeLinecap="square"
                   strokeDasharray={circumference}
                   strokeDashoffset={strokeDashoffset}
                   className="transition-all duration-1000"
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-5xl font-light text-foreground tabular-nums tracking-tight" data-testid="text-timer-display">
+                <span className="text-5xl font-light text-foreground tabular-nums tracking-tight font-mono" data-testid="text-timer-display">
                   {formatTime(timeRemaining)}
                 </span>
-                <span className="text-xs text-muted-foreground uppercase tracking-widest mt-1">
+                <span className="text-xs text-muted-foreground uppercase tracking-widest mt-2">
                   {timerState === "running" ? "Running" : timerState === "paused" ? "Paused" : sessionType === "work" ? "Focus" : "Break"}
                 </span>
               </div>
             </div>
 
-            <div className="flex justify-center gap-4">
-              <Button
+            <div className="flex justify-center gap-3">
+              <button
                 onClick={() => setTimerState(prev => prev === "running" ? "paused" : "running")}
-                variant="ghost"
-                size="icon"
                 data-testid="button-timer-toggle"
-                className="neo-button w-12 h-12 rounded-full"
+                className="w-12 h-12 border-2 border-foreground flex items-center justify-center hover-elevate active-elevate-2"
               >
                 {timerState === "running" ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
-              </Button>
-              <Button
+              </button>
+              <button
                 onClick={() => { setTimerState("idle"); setTimeRemaining(getDuration(sessionType)); }}
-                variant="ghost"
-                size="icon"
                 data-testid="button-timer-reset"
-                className="neo-button w-12 h-12 rounded-full"
+                className="w-12 h-12 border border-border flex items-center justify-center hover-elevate active-elevate-2"
               >
                 <RotateCcw className="w-5 h-5" />
-              </Button>
+              </button>
             </div>
           </div>
 
-          <div className="col-span-6 md:col-span-4 neo-card rounded-3xl p-6 flex flex-col justify-center">
-            <div className="text-5xl font-light text-foreground tracking-tight">
+          <div className="col-span-6 md:col-span-4 border border-border bg-card p-6 flex flex-col justify-center">
+            <div className="text-5xl font-light text-foreground tracking-tight font-mono">
               {month}/{day}
             </div>
             <div className="text-2xl text-muted-foreground font-light">
               {displayHours}{timeOfDay}
             </div>
-            <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="jp-divider my-4" />
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Clock className="w-4 h-4" />
               <span>{todayFocusMinutes} min focused today</span>
             </div>
           </div>
 
-          <div className="col-span-6 md:col-span-4 neo-card rounded-3xl p-5">
+          <div className="col-span-6 md:col-span-4 border border-border bg-card p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xs text-muted-foreground uppercase tracking-wider">Ambience</h3>
               {activeAmbience && (
@@ -503,8 +506,10 @@ export default function Dashboard() {
                   key={item.id}
                   onClick={() => setActiveAmbience(prev => prev === item.id ? null : item.id)}
                   data-testid={`button-ambience-${item.id}`}
-                  className={`flex flex-col items-center gap-1 p-3 rounded-2xl transition-all ${
-                    activeAmbience === item.id ? "neo-pressed" : "neo-button"
+                  className={`flex flex-col items-center gap-1 p-3 border hover-elevate active-elevate-2 ${
+                    activeAmbience === item.id 
+                      ? "border-primary bg-accent" 
+                      : "border-border"
                   }`}
                 >
                   <item.icon className={`w-5 h-5 ${activeAmbience === item.id ? "text-primary" : "text-foreground"}`} />
@@ -514,53 +519,53 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="col-span-6 md:col-span-4 neo-card rounded-3xl p-6">
+          <div className="col-span-6 md:col-span-4 border border-border bg-card p-6">
             <h3 className="text-xs text-muted-foreground uppercase tracking-wider mb-4">Hydration</h3>
             <div className="flex items-center justify-center gap-4 mb-3">
               <Button
                 onClick={() => setWaterCount(prev => Math.max(0, prev - 1))}
-                variant="ghost"
+                variant="outline"
                 size="icon"
                 data-testid="button-water-minus"
-                className="neo-button w-10 h-10 rounded-full"
               >
                 <Minus className="w-4 h-4" />
               </Button>
-              <div className="neo-inset p-4 rounded-2xl">
+              <div className="w-16 h-16 border-2 border-border flex items-center justify-center">
                 <Droplets className={`w-8 h-8 ${waterCount >= 8 ? "text-primary" : "text-foreground"}`} />
               </div>
               <Button
                 onClick={() => setWaterCount(prev => Math.min(8, prev + 1))}
-                variant="ghost"
+                variant="outline"
                 size="icon"
                 data-testid="button-water-plus"
-                className="neo-button w-10 h-10 rounded-full"
               >
                 <Plus className="w-4 h-4" />
               </Button>
             </div>
             <p className="text-center text-sm text-muted-foreground">
-              Drink water: <span className={`font-medium ${waterCount >= 8 ? "text-primary" : "text-foreground"}`}>{waterCount} / 8</span>
+              <span className={`font-medium font-mono ${waterCount >= 8 ? "text-primary" : "text-foreground"}`}>{waterCount}</span> / 8 glasses
             </p>
           </div>
 
-          <div className="col-span-6 md:col-span-4 neo-card rounded-3xl p-5 flex flex-col items-center justify-center">
-            <div className="neo-inset w-20 h-20 rounded-full flex items-center justify-center mb-2">
-              <span className="text-2xl font-bold text-foreground">{daysRemaining}</span>
+          <div className="col-span-6 md:col-span-4 border border-border bg-card p-5 flex flex-col items-center justify-center">
+            <div className="w-20 h-20 border-2 border-foreground flex items-center justify-center mb-3">
+              <span className="text-3xl font-light text-foreground font-mono">{daysRemaining}</span>
             </div>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider text-center">
-              Days Left This Year
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest text-center">
+              Days Remaining
             </p>
           </div>
 
-          <div className="col-span-12 md:col-span-4 neo-card rounded-3xl p-5">
-            <h3 className="text-xs text-muted-foreground uppercase tracking-wider mb-3">Today's Sessions</h3>
+          <div className="col-span-12 md:col-span-4 border border-border bg-card p-5">
+            <h3 className="text-xs text-muted-foreground uppercase tracking-wider mb-4">Today's Sessions</h3>
             <div className="flex items-center gap-2 flex-wrap">
               {Array.from({ length: currentSettings.sessionsUntilLongBreak }).map((_, i) => (
                 <div
                   key={i}
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-medium ${
-                    i < todayWorkSessions.length ? "bg-foreground text-background" : "neo-inset text-muted-foreground"
+                  className={`w-8 h-8 flex items-center justify-center text-xs font-medium font-mono ${
+                    i < todayWorkSessions.length 
+                      ? "bg-foreground text-background" 
+                      : "border border-border text-muted-foreground"
                   }`}
                 >
                   {i + 1}
@@ -572,29 +577,31 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="col-span-12 md:col-span-5 neo-card rounded-3xl p-5">
+          <div className="col-span-12 md:col-span-5 border border-border bg-card p-5">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xs text-muted-foreground uppercase tracking-wider">Tasks</h3>
-              <span className="text-xs text-muted-foreground">{incompleteTasks.length} Pending</span>
+              <h3 className="text-xs text-muted-foreground uppercase tracking-wider">Today's Focus</h3>
+              <span className="text-xs text-muted-foreground font-mono">{incompleteTasks.length} tasks</span>
             </div>
             
             <div className="space-y-2 max-h-48 overflow-y-auto mb-4">
               {incompleteTasks.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">No tasks yet</p>
+                <p className="text-sm text-muted-foreground text-center py-6 border border-dashed border-border">No tasks yet</p>
               ) : (
                 incompleteTasks.map(task => (
                   <div
                     key={task.id}
                     onClick={() => handleSelectTask(task.id)}
                     data-testid={`task-item-${task.id}`}
-                    className={`neo-inset rounded-xl p-3 flex items-center gap-3 group cursor-pointer transition-all ${
-                      currentTaskId === task.id ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""
+                    className={`border p-3 flex items-center gap-3 group cursor-pointer hover-elevate ${
+                      currentTaskId === task.id 
+                        ? "border-primary bg-accent/30 border-l-4 border-l-primary" 
+                        : "border-border"
                     }`}
                   >
                     <button
                       onClick={(e) => { e.stopPropagation(); toggleTaskMutation.mutate(task.id); }}
                       data-testid={`button-toggle-task-${task.id}`}
-                      className="neo-button w-5 h-5 rounded flex-shrink-0 flex items-center justify-center"
+                      className="w-4 h-4 border-2 border-border flex-shrink-0 flex items-center justify-center hover:border-foreground"
                     >
                       {task.completed && <Check className="w-3 h-3" />}
                     </button>
@@ -604,12 +611,12 @@ export default function Dashboard() {
                         {Array.from({ length: task.estimatedPomodoros }).map((_, i) => (
                           <div
                             key={i}
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              i < task.completedPomodoros ? "bg-primary" : "bg-muted-foreground/30"
+                            className={`w-1.5 h-1.5 ${
+                              i < task.completedPomodoros ? "bg-primary" : "border border-border"
                             }`}
                           />
                         ))}
-                        <span className="text-[10px] text-muted-foreground ml-1">
+                        <span className="text-[10px] text-muted-foreground ml-1 font-mono">
                           {task.completedPomodoros}/{task.estimatedPomodoros}
                         </span>
                       </div>
@@ -622,42 +629,43 @@ export default function Dashboard() {
                       data-testid={`button-delete-task-${task.id}`}
                       className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
                     >
-                      <Trash2 className="w-4 h-4 text-muted-foreground" />
+                      <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
                     </button>
                   </div>
                 ))
               )}
             </div>
 
-            <div className="neo-inset rounded-xl p-2">
-              <div className="flex items-center gap-2 mb-2">
+            <div className="border border-border p-3">
+              <div className="flex items-center gap-2 mb-3">
                 <Input
                   value={newTaskTitle}
                   onChange={(e) => setNewTaskTitle(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleAddTask()}
-                  placeholder="Add a task..."
+                  placeholder="What will you focus on?"
                   data-testid="input-task-title"
-                  className="flex-1 bg-transparent border-0 h-8 text-sm focus-visible:ring-0"
+                  className="flex-1 border-0 h-8 text-sm focus-visible:ring-0 bg-transparent"
                 />
                 <Button
                   onClick={handleAddTask}
-                  variant="ghost"
+                  variant="outline"
                   size="icon"
                   data-testid="button-add-task"
-                  className="neo-button w-8 h-8 rounded-lg flex-shrink-0"
                 >
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
-              <div className="flex items-center gap-1 px-1">
-                <span className="text-[10px] text-muted-foreground mr-1">Est:</span>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Sessions:</span>
                 {[1, 2, 3, 4].map(num => (
                   <button
                     key={num}
                     onClick={() => setNewTaskPomodoros(num)}
                     data-testid={`button-pomodoros-${num}`}
-                    className={`w-6 h-6 rounded text-xs font-medium transition-all ${
-                      newTaskPomodoros === num ? "bg-foreground text-background" : "neo-button-sm"
+                    className={`w-6 h-6 text-xs font-mono transition-all ${
+                      newTaskPomodoros === num 
+                        ? "bg-foreground text-background" 
+                        : "border border-border hover:border-foreground"
                     }`}
                   >
                     {num}
@@ -668,14 +676,14 @@ export default function Dashboard() {
           </div>
 
           <div className="col-span-12 md:col-span-3 flex flex-col gap-4">
-            <div className="neo-card rounded-3xl p-4 flex items-center justify-center gap-3">
+            <div className="border border-border bg-card p-4 flex items-center justify-center gap-3">
               <ThemeToggle />
               <Button
                 onClick={() => updateSettingsMutation.mutate({ soundEnabled: !currentSettings.soundEnabled })}
-                variant="ghost"
+                variant="outline"
                 size="icon"
                 data-testid="button-toggle-sound"
-                className={`neo-button w-10 h-10 rounded-full ${!currentSettings.soundEnabled ? "opacity-50" : ""}`}
+                className={!currentSettings.soundEnabled ? "opacity-50" : ""}
               >
                 {currentSettings.soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
               </Button>
@@ -683,28 +691,31 @@ export default function Dashboard() {
             <button
               onClick={() => setShowSettings(!showSettings)}
               data-testid="button-settings"
-              className={`neo-card rounded-3xl p-4 flex items-center justify-center transition-all ${showSettings ? "neo-pressed" : ""}`}
+              className={`border bg-card p-4 flex items-center justify-center gap-2 hover-elevate active-elevate-2 ${
+                showSettings ? "border-primary bg-accent" : "border-border"
+              }`}
             >
-              <Settings className="w-6 h-6 text-foreground" />
+              <Settings className="w-5 h-5 text-foreground" />
+              <span className="text-xs text-muted-foreground uppercase tracking-wider">Settings</span>
             </button>
           </div>
 
           {recentSessions.length > 0 && (
-            <div className="col-span-12 neo-card rounded-3xl p-5">
-              <h3 className="text-xs text-muted-foreground uppercase tracking-wider mb-3">Recent Sessions</h3>
+            <div className="col-span-12 border border-border bg-card p-5">
+              <h3 className="text-xs text-muted-foreground uppercase tracking-wider mb-4">Recent Sessions</h3>
               <div className="flex gap-3 overflow-x-auto pb-2">
                 {recentSessions.map(session => (
-                  <div key={session.id} className="neo-inset rounded-xl p-3 flex-shrink-0 min-w-[120px]">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className={`w-2 h-2 rounded-full ${
+                  <div key={session.id} className="border border-border p-3 flex-shrink-0 min-w-[120px]">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={`w-2 h-2 ${
                         session.type === "work" ? "bg-foreground" : "bg-primary"
                       }`} />
-                      <span className="text-xs text-foreground capitalize">
+                      <span className="text-xs text-foreground">
                         {session.type === "work" ? "Focus" : session.type === "shortBreak" ? "Short" : "Long"}
                       </span>
                     </div>
-                    <p className="text-lg font-light text-foreground">{Math.floor(session.duration / 60)}m</p>
-                    <p className="text-[10px] text-muted-foreground">
+                    <p className="text-xl font-light text-foreground font-mono">{Math.floor(session.duration / 60)}m</p>
+                    <p className="text-[10px] text-muted-foreground font-mono mt-1">
                       {new Date(session.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
@@ -716,74 +727,77 @@ export default function Dashboard() {
         </div>
 
         {showSettings && (
-          <div className="mt-6 neo-card rounded-3xl p-6">
-            <h3 className="text-lg font-medium text-foreground mb-6">Timer Settings</h3>
+          <div className="mt-6 border border-border bg-card p-6">
+            <h3 className="text-sm text-muted-foreground uppercase tracking-wider mb-6">Timer Settings</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="neo-inset rounded-2xl p-4">
-                <label className="text-xs text-muted-foreground uppercase tracking-wider">Focus Duration</label>
-                <div className="flex items-center justify-between mt-2">
+              <div className="border border-border p-4">
+                <label className="text-xs text-muted-foreground uppercase tracking-wider block mb-3">Focus Duration</label>
+                <div className="flex items-center justify-between">
                   <Button
                     onClick={() => updateSettingsMutation.mutate({ workDuration: Math.max(5, currentSettings.workDuration - 5) })}
-                    variant="ghost"
+                    variant="outline"
                     size="icon"
-                    className="neo-button w-8 h-8 rounded-lg"
+                    className="w-8 h-8"
                   >
                     <Minus className="w-4 h-4" />
                   </Button>
-                  <span className="text-2xl font-light text-foreground">{currentSettings.workDuration}m</span>
+                  <span className="text-3xl font-light text-foreground font-mono">{currentSettings.workDuration}</span>
                   <Button
                     onClick={() => updateSettingsMutation.mutate({ workDuration: Math.min(60, currentSettings.workDuration + 5) })}
-                    variant="ghost"
+                    variant="outline"
                     size="icon"
-                    className="neo-button w-8 h-8 rounded-lg"
+                    className="w-8 h-8"
                   >
                     <Plus className="w-4 h-4" />
                   </Button>
                 </div>
+                <p className="text-xs text-muted-foreground text-center mt-2">minutes</p>
               </div>
-              <div className="neo-inset rounded-2xl p-4">
-                <label className="text-xs text-muted-foreground uppercase tracking-wider">Short Break</label>
-                <div className="flex items-center justify-between mt-2">
+              <div className="border border-border p-4">
+                <label className="text-xs text-muted-foreground uppercase tracking-wider block mb-3">Short Break</label>
+                <div className="flex items-center justify-between">
                   <Button
                     onClick={() => updateSettingsMutation.mutate({ shortBreakDuration: Math.max(1, currentSettings.shortBreakDuration - 1) })}
-                    variant="ghost"
+                    variant="outline"
                     size="icon"
-                    className="neo-button w-8 h-8 rounded-lg"
+                    className="w-8 h-8"
                   >
                     <Minus className="w-4 h-4" />
                   </Button>
-                  <span className="text-2xl font-light text-foreground">{currentSettings.shortBreakDuration}m</span>
+                  <span className="text-3xl font-light text-foreground font-mono">{currentSettings.shortBreakDuration}</span>
                   <Button
                     onClick={() => updateSettingsMutation.mutate({ shortBreakDuration: Math.min(15, currentSettings.shortBreakDuration + 1) })}
-                    variant="ghost"
+                    variant="outline"
                     size="icon"
-                    className="neo-button w-8 h-8 rounded-lg"
+                    className="w-8 h-8"
                   >
                     <Plus className="w-4 h-4" />
                   </Button>
                 </div>
+                <p className="text-xs text-muted-foreground text-center mt-2">minutes</p>
               </div>
-              <div className="neo-inset rounded-2xl p-4">
-                <label className="text-xs text-muted-foreground uppercase tracking-wider">Long Break</label>
-                <div className="flex items-center justify-between mt-2">
+              <div className="border border-border p-4">
+                <label className="text-xs text-muted-foreground uppercase tracking-wider block mb-3">Long Break</label>
+                <div className="flex items-center justify-between">
                   <Button
                     onClick={() => updateSettingsMutation.mutate({ longBreakDuration: Math.max(10, currentSettings.longBreakDuration - 5) })}
-                    variant="ghost"
+                    variant="outline"
                     size="icon"
-                    className="neo-button w-8 h-8 rounded-lg"
+                    className="w-8 h-8"
                   >
                     <Minus className="w-4 h-4" />
                   </Button>
-                  <span className="text-2xl font-light text-foreground">{currentSettings.longBreakDuration}m</span>
+                  <span className="text-3xl font-light text-foreground font-mono">{currentSettings.longBreakDuration}</span>
                   <Button
                     onClick={() => updateSettingsMutation.mutate({ longBreakDuration: Math.min(30, currentSettings.longBreakDuration + 5) })}
-                    variant="ghost"
+                    variant="outline"
                     size="icon"
-                    className="neo-button w-8 h-8 rounded-lg"
+                    className="w-8 h-8"
                   >
                     <Plus className="w-4 h-4" />
                   </Button>
                 </div>
+                <p className="text-xs text-muted-foreground text-center mt-2">minutes</p>
               </div>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { Clock, ListTodo, BarChart3, Settings, GraduationCap } from "lucide-react";
+import { Clock, ListTodo, BarChart3, Settings } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import {
   Sidebar,
@@ -20,45 +20,45 @@ interface AppSidebarProps {
 }
 
 const navItems = [
-  { id: "timer" as View, label: "Timer", icon: Clock },
+  { id: "timer" as View, label: "Focus", icon: Clock },
   { id: "tasks" as View, label: "Tasks", icon: ListTodo },
-  { id: "stats" as View, label: "Stats", icon: BarChart3 },
+  { id: "stats" as View, label: "History", icon: BarChart3 },
   { id: "settings" as View, label: "Settings", icon: Settings },
 ];
 
 export function AppSidebar({ currentView, onViewChange }: AppSidebarProps) {
   return (
-    <Sidebar className="border-r-0">
-      <SidebarHeader className="p-6">
+    <Sidebar className="border-r border-sidebar-border">
+      <SidebarHeader className="p-6 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
-          <div className="neo-card p-2 rounded-xl">
-            <GraduationCap className="w-8 h-8 text-primary" />
+          <div className="w-10 h-10 border-2 border-primary flex items-center justify-center">
+            <span className="text-primary font-serif text-xl">S</span>
           </div>
           <div>
-            <h1 className="text-xl font-bold text-sidebar-foreground">StudyFlow</h1>
-            <p className="text-xs text-muted-foreground">Focus & Achieve</p>
+            <h1 className="text-lg font-medium tracking-tight text-sidebar-foreground">StudyFlow</h1>
+            <p className="text-xs text-muted-foreground tracking-wide">Mindful Focus</p>
           </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="px-3 py-6">
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1">
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
                     onClick={() => onViewChange(item.id)}
                     isActive={currentView === item.id}
                     data-testid={`nav-${item.id}`}
-                    className={`${
+                    className={`rounded-none ${
                       currentView === item.id
-                        ? "neo-pressed"
-                        : "neo-button"
+                        ? "bg-accent border-l-4 border-l-primary pl-4"
+                        : "pl-5"
                     }`}
                   >
-                    <item.icon className="w-5 h-5" />
-                    <span>{item.label}</span>
+                    <item.icon className={`w-4 h-4 ${currentView === item.id ? "text-primary" : ""}`} />
+                    <span className="text-sm tracking-wide">{item.label}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -69,7 +69,7 @@ export function AppSidebar({ currentView, onViewChange }: AppSidebarProps) {
 
       <SidebarFooter className="p-4 border-t border-sidebar-border">
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Theme</span>
+          <span className="text-xs text-muted-foreground uppercase tracking-wider">Theme</span>
           <ThemeToggle />
         </div>
       </SidebarFooter>

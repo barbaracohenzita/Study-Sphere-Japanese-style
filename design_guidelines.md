@@ -1,137 +1,169 @@
-# Study App Design Guidelines: Neomorphic Productivity Interface
+# Study App Design Guidelines: Japandi Minimalist Interface
 
 ## Design Approach
-**Neomorphic Design System** - Soft, tactile interface emphasizing depth through subtle shadows and highlights. This aesthetic creates a calm, focused environment perfect for productivity and concentration.
+**Japandi Minimalist System** - Zen-inspired productivity interface emphasizing Ma (negative space), Kanso (simplicity), and Shibui (subtle elegance). Flat, refined aesthetic with deliberate borders and breathing room to create calm focus.
 
 **Key Principles:**
-- Soft, embossed UI elements that appear to float or sink
-- Minimal visual noise to maintain focus
-- Tactile, pressable components
-- Generous spacing for breathing room
+- Abundant negative space as a design element
+- Refined borders over shadows for definition
+- Subtle texture layers (paper, linen grain)
+- Asymmetric balance inspired by Japanese composition
+- Essential elements only - extreme restraint
 
 ## Typography System
-- **Primary Font:** Inter or SF Pro Display (clean, modern sans-serif)
-- **Headings:** Font weights 600-700, sizes: text-3xl (timer), text-xl (section headers), text-lg (card titles)
-- **Body Text:** Font weight 400-500, sizes: text-base (task descriptions), text-sm (metadata)
-- **Monospace:** JetBrains Mono for timer/countdown displays (tabular-nums for alignment)
+- **Primary Font:** Inter (400, 500, 600 weights) via Google Fonts CDN
+- **Display Font:** Crimson Pro (for elegant headers, 500-600 weights)
+- **Timer Display:** JetBrains Mono (tabular-nums, 400-500 weights)
+- **Scale:** text-5xl (timer), text-2xl (page headers), text-lg (section titles), text-base (body), text-sm (metadata)
+- **Letter spacing:** tracking-tight for headers, tracking-normal for body
+- **Line height:** leading-relaxed for all text to enhance readability and breathing room
 
 ## Layout Architecture
 
-**Desktop-First Dashboard Layout:**
-- Fixed sidebar (w-64) for navigation and quick stats
-- Main content area with max-w-6xl container
-- Use Tailwind spacing: p-4, p-6, p-8, gap-6, gap-8
-- Consistent border-radius: rounded-2xl for cards, rounded-xl for buttons, rounded-lg for inputs
+**Asymmetric Dashboard Grid:**
+- Left column (2/5 width): Pomodoro timer + session stats (vertical rhythm)
+- Right column (3/5 width): Task management panel
+- Use Tailwind spacing: p-6, p-8, p-12, gap-8, gap-12, space-y-6
+- Maximum container width: max-w-7xl with px-8 horizontal padding
+- Borders: border, border-2 for emphasis
+- Corner treatment: rounded-none for strict minimalism, rounded for softer cards
 
-**Grid System:**
-- Primary dashboard: 2-column grid (lg:grid-cols-2) for timer + tasks
-- Task list: Single column with proper spacing (space-y-4)
-- Pomodoro stats: 3-column grid for metrics (grid-cols-3 gap-4)
+**Spacing Primitives:**
+- Consistently use: 2, 4, 6, 8, 12, 16 for spacing units
+- Generous vertical rhythm: space-y-8 between major sections, space-y-6 within sections
+- Horizontal padding: px-6 for cards, px-8 for containers
 
 ## Core Components
 
-**1. Sidebar Navigation**
-- Fixed left sidebar with app logo at top
-- Vertical menu items: Dashboard, Tasks, Statistics, Settings
-- Active state indicated by depth variation
-- User profile section at bottom
+**1. Top Navigation Bar**
+- Full-width horizontal bar, border-b with subtle texture background
+- Left: App wordmark (Crimson Pro, text-xl)
+- Center: Tab navigation (Dashboard, Focus History, Settings) - text-sm with minimal underline indicator
+- Right: Profile icon + daily streak counter
+- Height: h-16, px-8 horizontal padding
 
-**2. Pomodoro Timer (Hero Component)**
-- Large circular timer display (300-400px diameter) with neomorphic depth
-- Time in monospace font at text-6xl
-- Play/pause and reset buttons as rounded-full icons
-- Session counter below timer
-- Current task name displayed above timer
+**2. Pomodoro Timer (Primary Focus)**
+- Large circular outline (border-4, 320px diameter) with timer inside
+- Time display: JetBrains Mono, text-6xl, centered
+- Session indicator: Small vertical marks outside circle showing 4-session cycle
+- Current task name above timer (text-lg, max 40 characters)
+- Control buttons below: Single row with start/pause (icon-only, border-2, rounded-full, w-12 h-12)
+- Mode selector underneath: Work/Short Break/Long Break as text buttons with border-b-2 active state
 
-**3. Task Management Panel**
-- Task input field with neomorphic inset effect
-- Task cards with checkbox, title, time estimate, delete action
-- Each task shows subtle depth with inner shadow when incomplete
-- Completed tasks flatten with reduced opacity
-- "Add Task" button with prominent neomorphic raise
+**3. Session Statistics Panel**
+- Horizontal 3-card layout below timer (grid-cols-3, gap-4)
+- Each card: border, p-6, minimal design
+- Large metric (text-4xl, tabular-nums) + small label (text-sm, tracking-wide, uppercase)
+- Cards show: Sessions Today, Total Focus Time, Current Streak
+- Subtle texture background per card
 
-**4. Session History/Stats Cards**
-- Grid of metric cards showing: Sessions completed today, Total focus time, Current streak
-- Each card has soft shadow depth
-- Large number display (text-4xl) with small label underneath (text-sm)
+**4. Task Management Column**
+- Section header: "Today's Focus" (text-2xl, Crimson Pro, mb-6)
+- Task input: Full-width, border-2, px-4 py-3, placeholder with calming instruction
+- Task list: Single column, space-y-3
+- Task cards: border, p-4, flex layout
+  - Custom checkbox: square outline (w-5 h-5, border-2, rounded-sm) with checkmark reveal
+  - Task title: text-base, flex-1, ml-3
+  - Estimated time badge: text-sm, border, px-2 py-1, rounded-sm
+  - Delete icon: minimal, text-sm
+- Completed tasks: reduced opacity, subtle strikethrough
+- Add task button: w-full, border-2, border-dashed, py-3, text-center, hover with border-solid
 
-**5. Settings Panel**
-- Work duration slider
-- Short break duration slider  
-- Long break duration slider
-- Sound notifications toggle
-- All controls with neomorphic treatment
+**5. Settings/Preferences Panel**
+- Duration controls in vertical stack (space-y-6)
+- Each control: Label (text-sm, uppercase, tracking-wide) + value display + slider
+- Minimal sliders: thin track (h-1), square thumb (border-2, w-4 h-4)
+- Toggle switches: Rectangular track with sliding square indicator
+- Time presets: Grid of preset buttons (grid-cols-4, gap-2) - 15m, 25m, 45m, 60m
 
-## Spacing & Rhythm
-- Container padding: p-8 for main content area
-- Card padding: p-6 for standard cards, p-8 for prominent components
-- Section spacing: space-y-8 between major sections
-- Component spacing: gap-6 for component groups
-- Micro spacing: space-y-2 for related text elements
-
-## Interactive Elements
-
-**Buttons:**
-- Primary actions: px-8 py-3, rounded-xl, soft raised effect
-- Icon buttons: p-4, rounded-full
-- Hover: Slight elevation increase (transform subtle)
-- Active: Pressed inset effect
-
-**Form Inputs:**
-- Text fields: px-4 py-3, rounded-lg, inset shadow
-- Checkboxes: Custom neomorphic circles that depress when checked
-- Sliders: Rounded track with raised thumb control
-
-**Cards:**
-- Consistent rounded-2xl corners
-- Soft outer shadow + subtle inner highlight
-- Hover state: Minimal elevation change
-- Padding: p-6 standard
+**6. Focus History View**
+- Calendar-style grid showing completed sessions
+- Each day: small square with session count indicator
+- Weekly summary bars below calendar
+- Vertical timeline on right showing recent sessions with timestamps
 
 ## Component Hierarchy
 
-**Dashboard View Structure:**
-1. Top: Current session timer (prominent, centered in left column)
-2. Right column: Today's task list with quick add
-3. Below timer: Session stats in 3-column grid
-4. Bottom: Recent activity log
+**Dashboard Layout Structure:**
+```
+├── Top Navigation (full-width)
+├── Main Container (max-w-7xl, 2-column grid)
+│   ├── Left Column (Timer + Stats)
+│   │   ├── Pomodoro Timer (circular, prominent)
+│   │   ├── Session Stats (3-column grid)
+│   │   └── Quick Settings (collapsible)
+│   └── Right Column (Tasks)
+│       ├── Task Input
+│       ├── Active Tasks List
+│       └── Completed Tasks (collapsible)
+└── Bottom: Daily Quote/Affirmation (text-center, border-t, py-6)
+```
 
-**Depth Layers:**
-- Background: Flat base layer
-- Cards: Raised 2-4px equivalent depth
-- Active elements: Raised 4-6px
-- Pressed states: Inset 2px
-- Floating elements (modals): 8-12px
+## Visual Treatment Details
+
+**Borders & Lines:**
+- Primary borders: border (1px equivalent)
+- Emphasis borders: border-2
+- Accent elements: border-l-4 or border-t-4 for vermillion accent
+- All borders solid, no rounded corners on structural elements
+
+**Texture Integration:**
+- Subtle paper texture overlay on main background (CSS background-image)
+- Linen grain texture on card backgrounds
+- Keep textures at 3-5% opacity for subtlety
+
+**Depth Without Shadows:**
+- Layering through border contrast
+- Slight background tone shifts between elements
+- Border-l-4 accent bars for hierarchy
+- Negative space creates visual separation
+
+**Interactive States:**
+- Hover: Subtle background tone shift, border color change
+- Active: Border-2 becomes border-3 (simulated press)
+- Focus: Double border or border-2 with accent treatment
+- No transitions except opacity (duration-200)
+
+## Icons
+Use Heroicons (outline style) via CDN:
+- Timer: ClockIcon
+- Tasks: CheckCircleIcon, ListBulletIcon
+- Stats: ChartBarIcon
+- Settings: Cog6ToothIcon
+- Add: PlusIcon
+- Profile: UserCircleIcon
+
+## Images
+
+**Minimal Image Usage:**
+This is a utility-focused app where simplicity reigns. No hero images.
+
+**Permitted Visual Elements:**
+- User avatar: Small circular (w-10 h-10) in navigation
+- Empty state illustrations: Single-color, line-art style when no tasks exist (max 200px wide, centered)
+- Zen imagery option: Small (120x120px) subtle ink-wash style image in settings footer as calming element
+- Background textures: Paper grain, linen patterns as CSS backgrounds (subtle, < 5% opacity)
+
+## Accessibility
+- All borders maintain 3:1 contrast minimum
+- Interactive elements have 44x44px minimum touch targets
+- Keyboard navigation with visible focus indicators (border-2 with offset)
+- Timer announces time remaining to screen readers
+- Task checkboxes properly labeled
+- High contrast mode support through border emphasis
 
 ## Special Features
 
-**Focus Mode:**
-- Fullscreen timer view option
-- Minimal distractions: just timer, current task, controls
-- Ambient background treatment
+**Breathing Animation:**
+- Subtle pulsing border on timer during active session (very slow, 4s cycle)
+- Gentle opacity shift on task cards when due time approaching
 
-**Quick Actions Bar:**
-- Floating action strip at top-right: Quick add task, Start session, View stats
-- Rounded-full container with soft shadow
+**Session Transitions:**
+- Minimal slide transition between work/break modes
+- Zen bell sound notification option
+- Fullscreen focus mode: Just timer + current task, centered, maximum negative space
 
-## Icons
-Use Heroicons (outline style for consistency with neomorphic softness)
-- Timer: ClockIcon
-- Tasks: CheckCircleIcon  
-- Stats: ChartBarIcon
-- Settings: CogIcon
-- Add: PlusCircleIcon
-
-## Images
-No hero images. This is a utility-focused productivity app where the interface elements themselves are the primary visual focus. The neomorphic aesthetic creates visual interest through depth and shadow rather than photography.
-
-**Possible additions:**
-- Small avatar/profile image in sidebar (rounded-full, w-10 h-10)
-- Empty state illustrations for completed task lists (subtle, line-art style)
-
-## Accessibility
-- Ensure neomorphic depth is complemented by subtle border treatments for low-vision users
-- Maintain proper contrast ratios for text readability
-- Keyboard navigation for all timer and task controls
-- Focus states with visible outline offset
-- Screen reader labels for icon-only buttons
+**Mindful Additions:**
+- Daily intention input at top (text-sm, italic, border-l-4 accent)
+- Session reflection prompt after completion (modal with single text area)
+- Weekly review summary with minimal data visualization (vertical bars only)
