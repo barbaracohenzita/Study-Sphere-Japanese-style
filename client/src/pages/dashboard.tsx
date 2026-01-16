@@ -385,9 +385,9 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background p-6 md:p-10">
       <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-12 gap-6 auto-rows-min">
+        <div className="grid grid-cols-12 gap-8 auto-rows-min">
           
-          <div className="col-span-12 md:col-span-4 border border-border bg-card p-8">
+          <div className="col-span-12 md:col-span-4 border border-border bg-card p-10">
             <div className="flex gap-1 mb-6 justify-center border-b border-border pb-4">
               <button
                 onClick={() => { setSessionType("work"); setTimerState("idle"); setTimeRemaining(getDuration("work")); }}
@@ -447,7 +447,7 @@ export default function Dashboard() {
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-5xl font-light text-foreground tabular-nums tracking-tight font-mono" data-testid="text-timer-display">
+                <span className="text-6xl font-mono tabular-nums text-foreground tracking-tight" data-testid="text-timer-display">
                   {formatTime(timeRemaining)}
                 </span>
                 <span className="text-xs text-muted-foreground uppercase tracking-widest mt-2">
@@ -474,7 +474,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="col-span-6 md:col-span-4 border border-border bg-card p-6 flex flex-col justify-center">
+          <div className="col-span-6 md:col-span-4 border border-border bg-card p-8 flex flex-col justify-center">
             <div className="text-5xl font-light text-foreground tracking-tight font-mono">
               {month}/{day}
             </div>
@@ -488,9 +488,9 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="col-span-6 md:col-span-4 border border-border bg-card p-5">
+          <div className="col-span-6 md:col-span-4 border border-border bg-card p-8">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xs text-muted-foreground uppercase tracking-wider">Ambience</h3>
+              <h3 className="text-sm font-serif tracking-tight text-foreground uppercase">Ambience</h3>
               {activeAmbience && (
                 <span className="text-xs text-primary">Playing</span>
               )}
@@ -519,8 +519,8 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="col-span-6 md:col-span-4 border border-border bg-card p-6">
-            <h3 className="text-xs text-muted-foreground uppercase tracking-wider mb-4">Hydration</h3>
+          <div className="col-span-6 md:col-span-4 border border-border bg-card p-8">
+            <h3 className="text-sm font-serif tracking-tight text-foreground uppercase mb-4">Hydration</h3>
             <div className="flex items-center justify-center gap-4 mb-3">
               <Button
                 onClick={() => setWaterCount(prev => Math.max(0, prev - 1))}
@@ -547,7 +547,7 @@ export default function Dashboard() {
             </p>
           </div>
 
-          <div className="col-span-6 md:col-span-4 border border-border bg-card p-5 flex flex-col items-center justify-center">
+          <div className="col-span-6 md:col-span-4 border border-border bg-card p-8 flex flex-col items-center justify-center">
             <div className="w-20 h-20 border-2 border-foreground flex items-center justify-center mb-3">
               <span className="text-3xl font-light text-foreground font-mono">{daysRemaining}</span>
             </div>
@@ -556,8 +556,8 @@ export default function Dashboard() {
             </p>
           </div>
 
-          <div className="col-span-12 md:col-span-4 border border-border bg-card p-5">
-            <h3 className="text-xs text-muted-foreground uppercase tracking-wider mb-4">Today's Sessions</h3>
+          <div className="col-span-12 md:col-span-4 border border-border bg-card p-8">
+            <h3 className="text-sm font-serif tracking-tight text-foreground uppercase mb-4">Today's Sessions</h3>
             <div className="flex items-center gap-2 flex-wrap">
               {Array.from({ length: currentSettings.sessionsUntilLongBreak }).map((_, i) => (
                 <div
@@ -577,9 +577,9 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="col-span-12 md:col-span-5 border border-border bg-card p-5">
+          <div className="col-span-12 md:col-span-5 border border-border bg-card p-8">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xs text-muted-foreground uppercase tracking-wider">Today's Focus</h3>
+              <h3 className="text-sm font-serif tracking-tight text-foreground uppercase">Today's Focus</h3>
               <span className="text-xs text-muted-foreground font-mono">{incompleteTasks.length} tasks</span>
             </div>
             
@@ -701,8 +701,8 @@ export default function Dashboard() {
           </div>
 
           {recentSessions.length > 0 && (
-            <div className="col-span-12 border border-border bg-card p-5">
-              <h3 className="text-xs text-muted-foreground uppercase tracking-wider mb-4">Recent Sessions</h3>
+            <div className="col-span-12 border border-border bg-card p-8">
+              <h3 className="text-sm font-serif tracking-tight text-foreground uppercase mb-4">Recent Sessions</h3>
               <div className="flex gap-3 overflow-x-auto pb-2">
                 {recentSessions.map(session => (
                   <div key={session.id} className="border border-border p-3 flex-shrink-0 min-w-[120px]">
@@ -727,8 +727,8 @@ export default function Dashboard() {
         </div>
 
         {showSettings && (
-          <div className="mt-6 border border-border bg-card p-6">
-            <h3 className="text-sm text-muted-foreground uppercase tracking-wider mb-6">Timer Settings</h3>
+          <div className="mt-8 border border-border bg-card p-8">
+            <h3 className="text-sm font-serif tracking-tight text-foreground uppercase mb-6">Timer Settings</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="border border-border p-4">
                 <label className="text-xs text-muted-foreground uppercase tracking-wider block mb-3">Focus Duration</label>
