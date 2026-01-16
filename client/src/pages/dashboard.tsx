@@ -387,15 +387,15 @@ export default function Dashboard() {
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-12 gap-8 auto-rows-min">
           
-          <div className="col-span-12 md:col-span-4 border border-border bg-card p-10">
+          <div className="col-span-12 md:col-span-4 border border-border bg-card jp-paper p-10">
             <div className="flex gap-1 mb-6 justify-center border-b border-border pb-4">
               <button
                 onClick={() => { setSessionType("work"); setTimerState("idle"); setTimeRemaining(getDuration("work")); }}
                 data-testid="button-session-focus"
-                className={`px-4 py-2 text-sm tracking-wide transition-colors ${
+                className={`px-4 py-2 text-sm tracking-wide hover-elevate ${
                   sessionType === "work" 
                     ? "border-b-2 border-primary text-primary font-medium" 
-                    : "text-muted-foreground hover:text-foreground"
+                    : "text-muted-foreground"
                 }`}
               >
                 Focus
@@ -403,10 +403,10 @@ export default function Dashboard() {
               <button
                 onClick={() => { setSessionType("shortBreak"); setTimerState("idle"); setTimeRemaining(getDuration("shortBreak")); }}
                 data-testid="button-session-break"
-                className={`px-4 py-2 text-sm tracking-wide transition-colors ${
+                className={`px-4 py-2 text-sm tracking-wide hover-elevate ${
                   sessionType !== "work" 
                     ? "border-b-2 border-primary text-primary font-medium" 
-                    : "text-muted-foreground hover:text-foreground"
+                    : "text-muted-foreground"
                 }`}
               >
                 Break
