@@ -320,6 +320,23 @@ async function main() {
     );
     cookieJar = toggledTask.cookieJar;
     assert(toggledTask.data.completed === true, "Task toggle did not mark the task complete");
+    assert(
+      toggledTask.data.completedPomodoros === toggledTask.data.estimatedPomodoros,
+      "Completing a task should fill its remaining planned blocks",
+    );
+
+    const reopenedTask = await requestJson<Task>(
+      baseUrl,
+      `/api/tasks/${createdTask.data.id}/toggle`,
+      cookieJar,
+      { method: "PATCH" },
+    );
+    cookieJar = reopenedTask.cookieJar;
+    assert(reopenedTask.data.completed === false, "Reopening a task should make it active again");
+    assert(
+      reopenedTask.data.completedPomodoros === reopenedTask.data.estimatedPomodoros - 1,
+      "Reopening a completed task should restore one remaining block",
+    );
 
     const updatedSettings = await requestJson<Settings>(baseUrl, "/api/settings", cookieJar, {
       method: "PATCH",
@@ -351,11 +368,19 @@ async function main() {
       body: JSON.stringify({
         type: "work",
         duration: 1500,
+        taskId: createdTask.data.id,
       }),
     });
     cookieJar = createdSession.cookieJar;
     assert(createdSession.data.duration === 1500, "Session duration did not round-trip");
     assert(Boolean(createdSession.data.completedAt), "Session did not get a completion timestamp");
+
+    const tasksAfterSession = await requestJson<Task[]>(baseUrl, "/api/tasks", cookieJar);
+    cookieJar = tasksAfterSession.cookieJar;
+    const taskAfterSession = tasksAfterSession.data.find((task) => task.id === createdTask.data.id);
+    assert(taskAfterSession, "Task should still exist after recording a session");
+    assert(taskAfterSession.completedPomodoros === taskAfterSession.estimatedPomodoros, "Work session should cap task progress at the estimate");
+    assert(taskAfterSession.completed === true, "Task should auto-complete when all planned blocks are finished");
 
     const sessions = await requestJson<Session[]>(baseUrl, "/api/sessions", cookieJar);
     cookieJar = sessions.cookieJar;

@@ -283,6 +283,22 @@ function formatSessionName(sessionType: string) {
   return "Long Break";
 }
 
+function isTextEntryTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+
+  const tagName = target.tagName.toLowerCase();
+  return tagName === "input" || tagName === "textarea" || tagName === "select";
+}
+
+function describeCompletedTaskStatus(task: Task) {
+  if (task.completedPomodoros >= task.estimatedPomodoros) {
+    return "Finished all planned blocks";
+  }
+
+  return `Marked complete with ${task.completedPomodoros}/${task.estimatedPomodoros} blocks finished`;
+}
+
 function calculateFocusStreak(sessions: Session[], now: Date) {
   const workDays = new Set(
     sessions
@@ -811,19 +827,62 @@ export default function Dashboard({ user }: { user: User }) {
   };
 
   const handleSkipSession = useCallback(() => {
-    const nextSessionType: SessionType =
-      sessionType === "work"
-        ? getNextBreakSessionType(cycleWorkCount + 1)
-        : "work";
-
-    if (sessionType === "work") {
-      setCycleWorkCount((previous) => previous + 1);
-    }
+    const nextSessionType: SessionType = sessionType === "work" ? "shortBreak" : "work";
 
     setTimerState("idle");
     setSessionType(nextSessionType);
     setTimeRemaining(getDuration(nextSessionType));
-  }, [cycleWorkCount, getDuration, getNextBreakSessionType, sessionType]);
+  }, [getDuration, sessionType]);
+
+  const handleToggleTimer = useCallback(() => {
+    setTimerState((previous) => (previous === "running" ? "paused" : "running"));
+  }, []);
+
+  const handleResetTimer = useCallback(() => {
+    setTimerState("idle");
+    setTimeRemaining(getDuration(sessionType));
+  }, [getDuration, sessionType]);
+
+  const handleToggleSound = useCallback(() => {
+    updateSettingsMutation.mutate({
+      soundEnabled: !currentSettings.soundEnabled,
+    });
+  }, [currentSettings.soundEnabled, updateSettingsMutation]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.repeat || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (isTextEntryTarget(event.target)) return;
+
+      if (event.code === "Space") {
+        event.preventDefault();
+        handleToggleTimer();
+        return;
+      }
+
+      const key = event.key.toLowerCase();
+
+      if (key === "r") {
+        event.preventDefault();
+        handleResetTimer();
+        return;
+      }
+
+      if (key === "n") {
+        event.preventDefault();
+        handleSkipSession();
+        return;
+      }
+
+      if (key === "m") {
+        event.preventDefault();
+        handleToggleSound();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleResetTimer, handleSkipSession, handleToggleSound, handleToggleTimer]);
 
   const handleSaveTaskDetails = () => {
     if (!currentTask) return;
@@ -1296,9 +1355,7 @@ export default function Dashboard({ user }: { user: User }) {
                     <button
                       className="flex h-14 w-14 items-center justify-center border-2 border-foreground bg-background/80 transition-colors hover:bg-background"
                       data-testid="button-timer-toggle"
-                      onClick={() =>
-                        setTimerState((previous) => (previous === "running" ? "paused" : "running"))
-                      }
+                      onClick={handleToggleTimer}
                       title={timerState === "running" ? "Pause" : "Start"}
                       type="button"
                     >
@@ -1311,10 +1368,7 @@ export default function Dashboard({ user }: { user: User }) {
                     <button
                       className="flex h-14 w-14 items-center justify-center border border-border bg-background/50 transition-colors hover:bg-background/80"
                       data-testid="button-timer-reset"
-                      onClick={() => {
-                        setTimerState("idle");
-                        setTimeRemaining(getDuration(sessionType));
-                      }}
+                      onClick={handleResetTimer}
                       title="Reset"
                       type="button"
                     >
@@ -1335,11 +1389,7 @@ export default function Dashboard({ user }: { user: User }) {
                         currentSettings.soundEnabled ? "border-border" : "border-border/60 opacity-65",
                       )}
                       data-testid="button-toggle-sound"
-                      onClick={() =>
-                        updateSettingsMutation.mutate({
-                          soundEnabled: !currentSettings.soundEnabled,
-                        })
-                      }
+                      onClick={handleToggleSound}
                       title={currentSettings.soundEnabled ? "Sound on" : "Sound off"}
                       type="button"
                     >
@@ -1365,6 +1415,10 @@ export default function Dashboard({ user }: { user: User }) {
                       <Settings className="h-5 w-5" />
                     </button>
                   </div>
+
+                  <p className="mt-4 text-center text-[11px] uppercase tracking-[0.26em] text-muted-foreground">
+                    Shortcuts: Space start/pause, R reset, N next, M mute
+                  </p>
 
                   <div className="mt-8 grid w-full gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     <SummaryCard
@@ -1826,7 +1880,7 @@ export default function Dashboard({ user }: { user: User }) {
                               <div className="min-w-0">
                                 <p className="truncate text-sm text-muted-foreground line-through">{task.title}</p>
                                 <p className="mt-1 text-[11px] text-muted-foreground">
-                                  {task.completedPomodoros}/{task.estimatedPomodoros} blocks completed
+                                  {describeCompletedTaskStatus(task)}
                                 </p>
                               </div>
                               <div className="flex items-center gap-2">

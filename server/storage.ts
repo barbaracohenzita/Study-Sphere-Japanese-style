@@ -163,7 +163,20 @@ export class MemStorage implements IStorage {
     const task = workspace.tasks.get(id);
     if (!task) return undefined;
 
-    const updatedTask = { ...task, completed: !task.completed };
+    const updatedTask = task.completed
+      ? {
+          ...task,
+          completed: false,
+          completedPomodoros:
+            task.completedPomodoros >= task.estimatedPomodoros
+              ? Math.max(task.estimatedPomodoros - 1, 0)
+              : Math.min(task.completedPomodoros, task.estimatedPomodoros),
+        }
+      : {
+          ...task,
+          completed: true,
+          completedPomodoros: task.estimatedPomodoros,
+        };
     workspace.tasks.set(id, updatedTask);
     return updatedTask;
   }
@@ -173,9 +186,11 @@ export class MemStorage implements IStorage {
     const task = workspace.tasks.get(id);
     if (!task) return undefined;
 
+    const completedPomodoros = Math.min(task.completedPomodoros + 1, task.estimatedPomodoros);
     const updatedTask = {
       ...task,
-      completedPomodoros: task.completedPomodoros + 1,
+      completedPomodoros,
+      completed: completedPomodoros >= task.estimatedPomodoros,
     };
 
     workspace.tasks.set(id, updatedTask);
