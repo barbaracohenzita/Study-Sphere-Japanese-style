@@ -28,7 +28,10 @@ export const settings = pgTable("settings", {
 });
 
 export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true });
-export const insertSessionSchema = createInsertSchema(sessions).omit({ id: true });
+export const insertSessionSchema = createInsertSchema(sessions).omit({
+  id: true,
+  completedAt: true,
+});
 export const insertSettingsSchema = createInsertSchema(settings).omit({ id: true });
 
 export type Task = typeof tasks.$inferSelect;
