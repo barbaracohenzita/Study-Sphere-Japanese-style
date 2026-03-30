@@ -86,10 +86,25 @@ class AmbientSoundGenerator {
 
   start(type: string) {
     this.stop();
-    this.audioContext = new AudioContext();
-    this.gainNode = this.audioContext.createGain();
-    this.gainNode.gain.value = 0.15;
-    this.gainNode.connect(this.audioContext.destination);
+
+    const audioWindow = window as Window & { webkitAudioContext?: typeof AudioContext };
+    const AudioContextConstructor = globalThis.AudioContext ?? audioWindow.webkitAudioContext;
+    if (!AudioContextConstructor) {
+      return false;
+    }
+
+    try {
+      const context = new AudioContextConstructor();
+      const gainNode = context.createGain();
+      gainNode.gain.value = 0.15;
+      gainNode.connect(context.destination);
+      this.audioContext = context;
+      this.gainNode = gainNode;
+      void context.resume().catch(() => {});
+    } catch {
+      this.stop();
+      return false;
+    }
 
     switch (type) {
       case "rain":
@@ -105,6 +120,8 @@ class AmbientSoundGenerator {
         this.createFire();
         break;
     }
+
+    return true;
   }
 
   private createNoise(): AudioBufferSourceNode {
@@ -371,6 +388,17 @@ function readStoredDailyIntention(userId: string) {
   return localStorage.getItem(dashboardStorageKey(userId, "dailyIntention")) || "";
 }
 
+function readStoredActiveAmbience(userId: string) {
+  const value = localStorage.getItem(dashboardStorageKey(userId, "activeAmbience"));
+  return AMBIENCE_OPTIONS.some((option) => option.id === value) ? value : null;
+}
+
+function readStoredCycleWorkCount(userId: string) {
+  const saved = localStorage.getItem(dashboardStorageKey(userId, "cycleWorkCount"));
+  const parsed = saved ? Number.parseInt(saved, 10) : Number.NaN;
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+}
+
 function describeError(error: unknown, fallback: string) {
   if (error instanceof Error) {
     return error.message;
@@ -400,7 +428,12 @@ export default function Dashboard({ user }: { user: User }) {
   const [taskDraftTitle, setTaskDraftTitle] = useState("");
   const [taskDraftNotes, setTaskDraftNotes] = useState("");
   const [taskDraftPomodoros, setTaskDraftPomodoros] = useState(1);
-  const [activeAmbience, setActiveAmbience] = useState<string | null>(null);
+  const [activeAmbience, setActiveAmbience] = useState<string | null>(() => {
+    return readStoredActiveAmbience(user.id);
+  });
+  const [cycleWorkCount, setCycleWorkCount] = useState(() => {
+    return readStoredCycleWorkCount(user.id);
+  });
   const [showSettings, setShowSettings] = useState(false);
   const [now, setNow] = useState(() => new Date());
 
@@ -428,7 +461,10 @@ export default function Dashboard({ user }: { user: User }) {
     soundEnabled: true,
   };
 
-  const currentSettings = settings || defaultSettings;
+  const currentSettings: SettingsType = {
+    ...defaultSettings,
+    ...(settings ?? {}),
+  };
 
   useEffect(() => {
     localStorage.setItem(dashboardStorageKey(user.id, "currentTaskId"), currentTaskId || "");
@@ -436,7 +472,9 @@ export default function Dashboard({ user }: { user: User }) {
     localStorage.setItem(dashboardStorageKey(user.id, "timerState"), timerState);
     localStorage.setItem(dashboardStorageKey(user.id, "timeRemaining"), timeRemaining.toString());
     localStorage.setItem(dashboardStorageKey(user.id, "dailyIntention"), dailyIntention);
-  }, [currentTaskId, dailyIntention, sessionType, timeRemaining, timerState, user.id]);
+    localStorage.setItem(dashboardStorageKey(user.id, "activeAmbience"), activeAmbience || "");
+    localStorage.setItem(dashboardStorageKey(user.id, "cycleWorkCount"), cycleWorkCount.toString());
+  }, [activeAmbience, currentTaskId, cycleWorkCount, dailyIntention, sessionType, timeRemaining, timerState, user.id]);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -448,7 +486,17 @@ export default function Dashboard({ user }: { user: User }) {
 
   useEffect(() => {
     if (activeAmbience && currentSettings.soundEnabled) {
-      ambientGenerator.start(activeAmbience);
+      const started = ambientGenerator.start(activeAmbience);
+      if (!started) {
+        ambientGenerator.stop();
+        setActiveAmbience(null);
+        toast({
+          title: "Ambient audio unavailable",
+          description:
+            "This browser blocked the ambience engine. Try interacting again or use a browser with Web Audio support.",
+          variant: "destructive",
+        });
+      }
     } else {
       ambientGenerator.stop();
     }
@@ -497,9 +545,12 @@ export default function Dashboard({ user }: { user: User }) {
 
   const addTaskMutation = useMutation({
     mutationFn: async (data: { title: string; estimatedPomodoros: number }) => {
-      return apiRequest("POST", "/api/tasks", data);
+      const response = await apiRequest("POST", "/api/tasks", data);
+      return (await response.json()) as Task;
     },
-    onSuccess: () => {
+    onSuccess: (task) => {
+      queryClient.setQueryData<Task[]>(["/api/tasks"], (previous = []) => [...previous, task]);
+      setCurrentTaskId(task.id);
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
     },
     onError: (error) => {
@@ -513,9 +564,21 @@ export default function Dashboard({ user }: { user: User }) {
 
   const toggleTaskMutation = useMutation({
     mutationFn: async (id: string) => {
-      return apiRequest("PATCH", `/api/tasks/${id}/toggle`);
+      const response = await apiRequest("PATCH", `/api/tasks/${id}/toggle`);
+      return (await response.json()) as Task;
     },
-    onSuccess: () => {
+    onSuccess: (task) => {
+      queryClient.setQueryData<Task[]>(
+        ["/api/tasks"],
+        (previous = []) => previous.map((item) => (item.id === task.id ? task : item)),
+      );
+      setCurrentTaskId((previous) => {
+        if (task.completed) {
+          return previous === task.id ? null : previous;
+        }
+
+        return task.id;
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
     },
     onError: (error) => {
@@ -529,9 +592,15 @@ export default function Dashboard({ user }: { user: User }) {
 
   const deleteTaskMutation = useMutation({
     mutationFn: async (id: string) => {
-      return apiRequest("DELETE", `/api/tasks/${id}`);
+      await apiRequest("DELETE", `/api/tasks/${id}`);
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (id) => {
+      queryClient.setQueryData<Task[]>(
+        ["/api/tasks"],
+        (previous = []) => previous.filter((task) => task.id !== id),
+      );
+      setCurrentTaskId((previous) => (previous === id ? null : previous));
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
     },
     onError: (error) => {
@@ -545,13 +614,18 @@ export default function Dashboard({ user }: { user: User }) {
 
   const updateTaskMutation = useMutation({
     mutationFn: async (data: { id: string; title: string; notes: string; estimatedPomodoros: number }) => {
-      return apiRequest("PATCH", `/api/tasks/${data.id}`, {
+      const response = await apiRequest("PATCH", `/api/tasks/${data.id}`, {
         title: data.title,
         notes: data.notes,
         estimatedPomodoros: data.estimatedPomodoros,
       });
+      return (await response.json()) as Task;
     },
-    onSuccess: () => {
+    onSuccess: (task) => {
+      queryClient.setQueryData<Task[]>(
+        ["/api/tasks"],
+        (previous = []) => previous.map((item) => (item.id === task.id ? task : item)),
+      );
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
     },
     onError: (error) => {
@@ -632,6 +706,19 @@ export default function Dashboard({ user }: { user: User }) {
 
   const totalWorkSessions = sessions.filter((session) => session.type === "work").length;
 
+  useEffect(() => {
+    setCycleWorkCount((previous) => Math.max(previous, totalWorkSessions));
+  }, [totalWorkSessions]);
+
+  const getNextBreakSessionType = useCallback(
+    (completedWorkCount: number): SessionType => {
+      return completedWorkCount % currentSettings.sessionsUntilLongBreak === 0
+        ? "longBreak"
+        : "shortBreak";
+    },
+    [currentSettings.sessionsUntilLongBreak],
+  );
+
   const handleSessionComplete = useCallback(() => {
     const duration = getDuration(sessionType);
 
@@ -659,17 +746,11 @@ export default function Dashboard({ user }: { user: User }) {
     });
 
     if (sessionType === "work") {
-      const updatedWorkCount = totalWorkSessions + 1;
-      const shouldTakeLongBreak =
-        updatedWorkCount % currentSettings.sessionsUntilLongBreak === 0;
-
-      if (shouldTakeLongBreak) {
-        setSessionType("longBreak");
-        setTimeRemaining(currentSettings.longBreakDuration * 60);
-      } else {
-        setSessionType("shortBreak");
-        setTimeRemaining(currentSettings.shortBreakDuration * 60);
-      }
+      const updatedWorkCount = cycleWorkCount + 1;
+      const nextSessionType = getNextBreakSessionType(updatedWorkCount);
+      setCycleWorkCount(updatedWorkCount);
+      setSessionType(nextSessionType);
+      setTimeRemaining(getDuration(nextSessionType));
     } else {
       setSessionType("work");
       setTimeRemaining(currentSettings.workDuration * 60);
@@ -677,12 +758,13 @@ export default function Dashboard({ user }: { user: User }) {
 
     setTimerState("idle");
   }, [
+    cycleWorkCount,
     createSessionMutation,
     currentSettings,
     currentTaskId,
     getDuration,
+    getNextBreakSessionType,
     sessionType,
-    totalWorkSessions,
   ]);
 
   useEffect(() => {
@@ -729,11 +811,19 @@ export default function Dashboard({ user }: { user: User }) {
   };
 
   const handleSkipSession = useCallback(() => {
-    const nextSessionType: SessionType = sessionType === "work" ? "shortBreak" : "work";
+    const nextSessionType: SessionType =
+      sessionType === "work"
+        ? getNextBreakSessionType(cycleWorkCount + 1)
+        : "work";
+
+    if (sessionType === "work") {
+      setCycleWorkCount((previous) => previous + 1);
+    }
+
     setTimerState("idle");
     setSessionType(nextSessionType);
     setTimeRemaining(getDuration(nextSessionType));
-  }, [getDuration, sessionType]);
+  }, [cycleWorkCount, getDuration, getNextBreakSessionType, sessionType]);
 
   const handleSaveTaskDetails = () => {
     if (!currentTask) return;
@@ -768,7 +858,7 @@ export default function Dashboard({ user }: { user: User }) {
   const recentSessions = [...sessions]
     .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
     .slice(0, 6);
-  const cycleProgress = totalWorkSessions % currentSettings.sessionsUntilLongBreak;
+  const cycleProgress = cycleWorkCount % currentSettings.sessionsUntilLongBreak;
   const nextLongBreakIn =
     cycleProgress === 0
       ? currentSettings.sessionsUntilLongBreak
@@ -792,6 +882,11 @@ export default function Dashboard({ user }: { user: User }) {
       taskDraftPomodoros !== currentTask.estimatedPomodoros
     : false;
   const activeAmbienceOption = AMBIENCE_OPTIONS.find((option) => option.id === activeAmbience);
+  const ambienceStatusLabel = activeAmbienceOption
+    ? currentSettings.soundEnabled
+      ? `${activeAmbienceOption.label} active`
+      : `${activeAmbienceOption.label} selected`
+    : "Off";
   const modeDetails = MODE_OPTIONS.find((mode) => mode.id === sessionType)!;
   const dailyQuote = DAILY_QUOTES[now.getDate() % DAILY_QUOTES.length];
   const yearEnd = new Date(now.getFullYear(), 11, 31);
@@ -1008,6 +1103,8 @@ export default function Dashboard({ user }: { user: User }) {
                   <p className="mt-1 text-sm text-muted-foreground">
                     {activeAmbienceOption && currentSettings.soundEnabled
                       ? "Ambient texture is active."
+                      : activeAmbienceOption
+                        ? "Sound is muted. Turn audio back on to resume the selected ambience."
                       : "Sound stays optional until it helps."}
                   </p>
                 </div>
@@ -1439,9 +1536,14 @@ export default function Dashboard({ user }: { user: User }) {
                     </div>
 
                     <div className="border border-border bg-background/45 p-4">
-                      <p className="text-[11px] uppercase tracking-[0.32em] text-muted-foreground">
-                        Sound Policy
-                      </p>
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-[11px] uppercase tracking-[0.32em] text-muted-foreground">
+                          Sound Policy
+                        </p>
+                        <span className="text-xs text-muted-foreground">
+                          {currentSettings.soundEnabled ? "Enabled" : "Muted"}
+                        </span>
+                      </div>
                       <p className="mt-4 text-sm leading-6 text-muted-foreground">
                         Notifications and ambience remain optional. Use silence when it helps the page stay calm.
                       </p>
@@ -1717,12 +1819,34 @@ export default function Dashboard({ user }: { user: User }) {
                       ) : (
                         completedTasks.slice(0, 4).map((task) => (
                           <div
-                            className="border border-border/70 bg-background/50 p-3 text-sm text-muted-foreground"
+                            className="border border-border/70 bg-background/50 p-3"
                             key={task.id}
                           >
-                            <div className="flex items-center justify-between gap-3">
-                              <span className="truncate line-through">{task.title}</span>
-                              <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="truncate text-sm text-muted-foreground line-through">{task.title}</p>
+                                <p className="mt-1 text-[11px] text-muted-foreground">
+                                  {task.completedPomodoros}/{task.estimatedPomodoros} blocks completed
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  className="border border-border px-2 py-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+                                  data-testid={`button-reopen-task-${task.id}`}
+                                  onClick={() => toggleTaskMutation.mutate(task.id)}
+                                  type="button"
+                                >
+                                  Reopen
+                                </button>
+                                <button
+                                  className="border border-border p-2 text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+                                  data-testid={`button-delete-completed-task-${task.id}`}
+                                  onClick={() => deleteTaskMutation.mutate(task.id)}
+                                  type="button"
+                                >
+                                  <Trash2 className="h-4 w-4 flex-shrink-0" />
+                                </button>
+                              </div>
                             </div>
                           </div>
                         ))
@@ -1735,9 +1859,7 @@ export default function Dashboard({ user }: { user: User }) {
                       <p className="text-[11px] uppercase tracking-[0.32em] text-muted-foreground">
                         Ambience
                       </p>
-                      <span className="text-xs text-muted-foreground">
-                        {activeAmbienceOption ? `${activeAmbienceOption.label} active` : "Off"}
-                      </span>
+                      <span className="text-xs text-muted-foreground">{ambienceStatusLabel}</span>
                     </div>
 
                     <div className="mt-4 grid grid-cols-2 gap-2">

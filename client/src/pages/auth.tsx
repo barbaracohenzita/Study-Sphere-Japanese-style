@@ -50,6 +50,9 @@ export default function AuthPage() {
       return submitAuth("/api/auth/login", { email: email.trim(), password });
     },
     onSuccess: (user) => {
+      queryClient.removeQueries({ queryKey: ["/api/tasks"] });
+      queryClient.removeQueries({ queryKey: ["/api/sessions"] });
+      queryClient.removeQueries({ queryKey: ["/api/settings"] });
       queryClient.setQueryData(["/api/auth/user"], user);
     },
     onError: (mutationError) => {
