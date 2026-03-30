@@ -34,6 +34,23 @@ export const insertSessionSchema = createInsertSchema(sessions).omit({
 });
 export const insertSettingsSchema = createInsertSchema(settings).omit({ id: true });
 
+export const userSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string().email(),
+});
+
+export const registerUserSchema = z.object({
+  name: z.string().min(2).max(40),
+  email: z.string().email(),
+  password: z.string().min(8).max(72),
+});
+
+export const loginUserSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8).max(72),
+});
+
 export type Task = typeof tasks.$inferSelect;
 export type InsertTask = z.infer<typeof insertTaskSchema>;
 
@@ -42,6 +59,9 @@ export type InsertSession = z.infer<typeof insertSessionSchema>;
 
 export type Settings = typeof settings.$inferSelect;
 export type InsertSettings = z.infer<typeof insertSettingsSchema>;
+export type User = z.infer<typeof userSchema>;
+export type RegisterUser = z.infer<typeof registerUserSchema>;
+export type LoginUser = z.infer<typeof loginUserSchema>;
 
 export type TimerState = 'idle' | 'running' | 'paused';
 export type SessionType = 'work' | 'shortBreak' | 'longBreak';
