@@ -82,8 +82,9 @@ export default function AuthPage() {
               </div>
 
               <p className="mt-6 max-w-xl text-sm leading-7 text-muted-foreground">
-                Sign in to keep the dashboard, timer, and task ledger scoped to your account. This
-                local build uses in-memory auth, so accounts reset when the dev server restarts.
+                Sign in to keep the dashboard, timer, and task ledger scoped to your account. Study
+                data now persists locally, while browser sessions still reset when the dev server
+                restarts.
               </p>
 
               <div className="mt-10 grid gap-4 sm:grid-cols-3">
@@ -110,8 +111,7 @@ export default function AuthPage() {
             </div>
 
             <div className="mt-8 border-t border-border pt-5 text-sm text-muted-foreground">
-              Create an account once, then the dashboard will open automatically inside the current
-              browser session.
+              Create an account once, then sign back in whenever you restart the local server.
             </div>
           </section>
 

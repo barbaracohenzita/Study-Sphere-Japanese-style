@@ -1,5 +1,7 @@
 import type { Task, InsertTask, Session, InsertSession, Settings, User } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "fs";
+import path from "path";
 
 export type StoredUser = User & {
   passwordHash: string;
@@ -9,6 +11,22 @@ type UserWorkspace = {
   tasks: Map<string, Task>;
   sessions: Map<string, Session>;
   settings: Settings;
+};
+
+type PersistedSession = Omit<Session, "completedAt"> & {
+  completedAt: string;
+};
+
+type PersistedWorkspace = {
+  userId: string;
+  tasks: Task[];
+  sessions: PersistedSession[];
+  settings: Settings;
+};
+
+type PersistedStore = {
+  users: StoredUser[];
+  workspaces: PersistedWorkspace[];
 };
 
 const defaultSettings = (): Settings => ({
@@ -45,11 +63,14 @@ export class MemStorage implements IStorage {
   private users: Map<string, StoredUser>;
   private usersByEmail: Map<string, string>;
   private workspaces: Map<string, UserWorkspace>;
+  private dataFile: string;
 
-  constructor() {
+  constructor(dataFile = process.env.STUDYFLOW_DATA_FILE || path.join("data", "studyflow-store.json")) {
     this.users = new Map();
     this.usersByEmail = new Map();
     this.workspaces = new Map();
+    this.dataFile = path.resolve(process.cwd(), dataFile);
+    this.loadFromDisk();
   }
 
   private normalizeEmail(email: string) {
@@ -76,6 +97,74 @@ export class MemStorage implements IStorage {
 
     this.workspaces.set(userId, workspace);
     return workspace;
+  }
+
+  private loadFromDisk() {
+    if (!existsSync(this.dataFile)) return;
+
+    try {
+      const raw = readFileSync(this.dataFile, "utf8");
+      if (!raw.trim()) return;
+
+      const parsed = JSON.parse(raw) as Partial<PersistedStore>;
+
+      for (const user of parsed.users ?? []) {
+        this.users.set(user.id, user);
+        this.usersByEmail.set(this.normalizeEmail(user.email), user.id);
+      }
+
+      for (const workspace of parsed.workspaces ?? []) {
+        this.workspaces.set(workspace.userId, {
+          tasks: new Map(
+            (workspace.tasks ?? []).map((task) => [
+              task.id,
+              {
+                ...task,
+                notes: task.notes ?? "",
+                completed: task.completed ?? false,
+                estimatedPomodoros: task.estimatedPomodoros ?? 1,
+                completedPomodoros: task.completedPomodoros ?? 0,
+              },
+            ]),
+          ),
+          sessions: new Map(
+            (workspace.sessions ?? []).map((session) => [
+              session.id,
+              {
+                ...session,
+                completedAt: new Date(session.completedAt),
+              },
+            ]),
+          ),
+          settings: {
+            ...defaultSettings(),
+            ...(workspace.settings ?? {}),
+          },
+        });
+      }
+    } catch (error) {
+      console.error(`Failed to load StudyFlow data from ${this.dataFile}`, error);
+    }
+  }
+
+  private persistToDisk() {
+    const serialized: PersistedStore = {
+      users: Array.from(this.users.values()),
+      workspaces: Array.from(this.workspaces.entries()).map(([userId, workspace]) => ({
+        userId,
+        tasks: Array.from(workspace.tasks.values()),
+        sessions: Array.from(workspace.sessions.values()).map((session) => ({
+          ...session,
+          completedAt: session.completedAt.toISOString(),
+        })),
+        settings: workspace.settings,
+      })),
+    };
+
+    mkdirSync(path.dirname(this.dataFile), { recursive: true });
+    const tempFile = `${this.dataFile}.tmp`;
+    writeFileSync(tempFile, JSON.stringify(serialized, null, 2), "utf8");
+    renameSync(tempFile, this.dataFile);
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -105,6 +194,7 @@ export class MemStorage implements IStorage {
     this.users.set(user.id, user);
     this.usersByEmail.set(normalizedEmail, user.id);
     this.ensureWorkspace(user.id);
+    this.persistToDisk();
 
     return this.toPublicUser(user);
   }
@@ -130,6 +220,7 @@ export class MemStorage implements IStorage {
     };
 
     workspace.tasks.set(id, task);
+    this.persistToDisk();
     return task;
   }
 
@@ -151,11 +242,17 @@ export class MemStorage implements IStorage {
       estimatedPomodoros,
     };
     workspace.tasks.set(id, updatedTask);
+    this.persistToDisk();
     return updatedTask;
   }
 
   async deleteTask(userId: string, id: string): Promise<boolean> {
-    return this.ensureWorkspace(userId).tasks.delete(id);
+    const deleted = this.ensureWorkspace(userId).tasks.delete(id);
+    if (deleted) {
+      this.persistToDisk();
+    }
+
+    return deleted;
   }
 
   async toggleTask(userId: string, id: string): Promise<Task | undefined> {
@@ -178,6 +275,7 @@ export class MemStorage implements IStorage {
           completedPomodoros: task.estimatedPomodoros,
         };
     workspace.tasks.set(id, updatedTask);
+    this.persistToDisk();
     return updatedTask;
   }
 
@@ -194,6 +292,7 @@ export class MemStorage implements IStorage {
     };
 
     workspace.tasks.set(id, updatedTask);
+    this.persistToDisk();
     return updatedTask;
   }
 
@@ -218,6 +317,8 @@ export class MemStorage implements IStorage {
 
     if (session.type === "work" && session.taskId) {
       await this.incrementTaskPomodoro(userId, session.taskId);
+    } else {
+      this.persistToDisk();
     }
 
     return session;
@@ -230,6 +331,7 @@ export class MemStorage implements IStorage {
   async updateSettings(userId: string, updates: Partial<Settings>): Promise<Settings> {
     const workspace = this.ensureWorkspace(userId);
     workspace.settings = { ...workspace.settings, ...updates };
+    this.persistToDisk();
     return workspace.settings;
   }
 }

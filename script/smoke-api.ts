@@ -1,5 +1,7 @@
 import { createServer } from "node:net";
 import { spawn, type ChildProcess } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import process from "node:process";
 
@@ -167,7 +169,7 @@ async function requestStatus(
   };
 }
 
-function startServer(port: number) {
+function startServer(port: number, dataFile: string) {
   const tsxPath = path.resolve("node_modules/.bin/tsx");
   const child = spawn(tsxPath, ["server/index.ts"], {
     cwd: process.cwd(),
@@ -175,6 +177,7 @@ function startServer(port: number) {
       ...process.env,
       NODE_ENV: "development",
       PORT: String(port),
+      STUDYFLOW_DATA_FILE: dataFile,
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -208,7 +211,9 @@ async function stopServer(child: ChildProcess) {
 async function main() {
   const port = await getFreePort();
   const baseUrl = `http://127.0.0.1:${port}`;
-  const server = startServer(port);
+  const tempDir = mkdtempSync(path.join(tmpdir(), "studyflow-smoke-"));
+  const dataFile = path.join(tempDir, "store.json");
+  let server = startServer(port, dataFile);
 
   try {
     await waitForServer(baseUrl);
@@ -386,6 +391,35 @@ async function main() {
     cookieJar = sessions.cookieJar;
     assert(sessions.data.length === 1, "Expected the smoke run to create exactly one session");
 
+    await stopServer(server);
+    server = startServer(port, dataFile);
+    await waitForServer(baseUrl);
+
+    const reloggedIn = await requestJson<User>(baseUrl, "/api/auth/login", "", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: "smoke@example.com",
+        password: "smoke-pass-123",
+      }),
+    });
+    cookieJar = reloggedIn.cookieJar;
+    assert(reloggedIn.data.name === "Smoke User", "Persisted account should still support login after restart");
+
+    const persistedSettings = await requestJson<Settings>(baseUrl, "/api/settings", cookieJar);
+    cookieJar = persistedSettings.cookieJar;
+    assert(persistedSettings.data.dailyGoal === 7, "Settings should persist after restart");
+    assert(persistedSettings.data.soundEnabled === false, "Sound preference should persist after restart");
+
+    const persistedTasks = await requestJson<Task[]>(baseUrl, "/api/tasks", cookieJar);
+    cookieJar = persistedTasks.cookieJar;
+    assert(persistedTasks.data.length === 1, "Tasks should persist after restart");
+    assert(persistedTasks.data[0].completed === true, "Task completion should persist after restart");
+
+    const persistedSessions = await requestJson<Session[]>(baseUrl, "/api/sessions", cookieJar);
+    cookieJar = persistedSessions.cookieJar;
+    assert(persistedSessions.data.length === 1, "Sessions should persist after restart");
+
     const deletedTask = await fetch(`${baseUrl}/api/tasks/${createdTask.data.id}`, {
       method: "DELETE",
       headers: cookieJar ? { cookie: cookieJar } : undefined,
@@ -395,6 +429,7 @@ async function main() {
     console.log("Smoke API checks passed.");
   } finally {
     await stopServer(server);
+    rmSync(tempDir, { recursive: true, force: true });
   }
 }
 
