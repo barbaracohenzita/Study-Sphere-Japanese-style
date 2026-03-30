@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { ArrowRight, LockKeyhole, User2 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -33,15 +33,21 @@ export default function AuthPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (error) {
+      setError(null);
+    }
+  }, [mode, name, email, password]);
+
   const authMutation = useMutation({
     mutationFn: async () => {
       setError(null);
 
       if (mode === "register") {
-        return submitAuth("/api/auth/register", { name, email, password });
+        return submitAuth("/api/auth/register", { name: name.trim(), email: email.trim(), password });
       }
 
-      return submitAuth("/api/auth/login", { email, password });
+      return submitAuth("/api/auth/login", { email: email.trim(), password });
     },
     onSuccess: (user) => {
       queryClient.setQueryData(["/api/auth/user"], user);

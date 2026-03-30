@@ -4,6 +4,8 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import {
   CalendarDays,
@@ -12,6 +14,7 @@ import {
   ChevronRight,
   CloudRain,
   Coffee,
+  FastForward,
   Flame,
   Hourglass,
   ListTodo,
@@ -20,6 +23,7 @@ import {
   Play,
   Plus,
   RotateCcw,
+  Save,
   Settings,
   Sparkles,
   Target,
@@ -337,25 +341,65 @@ function SummaryCard({
   );
 }
 
+const DASHBOARD_STORAGE_PREFIX = "studyflow";
+
+function dashboardStorageKey(userId: string, key: string) {
+  return `${DASHBOARD_STORAGE_PREFIX}:${userId}:${key}`;
+}
+
+function readStoredTaskId(userId: string) {
+  return localStorage.getItem(dashboardStorageKey(userId, "currentTaskId")) || null;
+}
+
+function readStoredSessionType(userId: string): SessionType {
+  const value = localStorage.getItem(dashboardStorageKey(userId, "sessionType"));
+  return value === "work" || value === "shortBreak" || value === "longBreak" ? value : "work";
+}
+
+function readStoredTimerState(userId: string): TimerState {
+  const value = localStorage.getItem(dashboardStorageKey(userId, "timerState"));
+  return value === "running" || value === "paused" || value === "idle" ? value : "idle";
+}
+
+function readStoredTimeRemaining(userId: string, fallback: number) {
+  const saved = localStorage.getItem(dashboardStorageKey(userId, "timeRemaining"));
+  const parsed = saved ? Number.parseInt(saved, 10) : Number.NaN;
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
+function readStoredDailyIntention(userId: string) {
+  return localStorage.getItem(dashboardStorageKey(userId, "dailyIntention")) || "";
+}
+
+function describeError(error: unknown, fallback: string) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return fallback;
+}
+
 export default function Dashboard({ user }: { user: User }) {
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(() => {
-    return localStorage.getItem("studyflow_currentTaskId") || null;
+    return readStoredTaskId(user.id);
   });
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskPomodoros, setNewTaskPomodoros] = useState(1);
   const [sessionType, setSessionType] = useState<SessionType>(() => {
-    return (localStorage.getItem("studyflow_sessionType") as SessionType) || "work";
+    return readStoredSessionType(user.id);
   });
   const [timerState, setTimerState] = useState<TimerState>(() => {
-    return (localStorage.getItem("studyflow_timerState") as TimerState) || "idle";
+    return readStoredTimerState(user.id);
   });
   const [timeRemaining, setTimeRemaining] = useState(() => {
-    const saved = localStorage.getItem("studyflow_timeRemaining");
-    return saved ? parseInt(saved, 10) : 25 * 60;
+    return readStoredTimeRemaining(user.id, 25 * 60);
   });
   const [dailyIntention, setDailyIntention] = useState(() => {
-    return localStorage.getItem("studyflow_dailyIntention") || "";
+    return readStoredDailyIntention(user.id);
   });
+  const [taskDraftTitle, setTaskDraftTitle] = useState("");
+  const [taskDraftNotes, setTaskDraftNotes] = useState("");
+  const [taskDraftPomodoros, setTaskDraftPomodoros] = useState(1);
   const [activeAmbience, setActiveAmbience] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [now, setNow] = useState(() => new Date());
@@ -380,18 +424,19 @@ export default function Dashboard({ user }: { user: User }) {
     shortBreakDuration: 5,
     longBreakDuration: 15,
     sessionsUntilLongBreak: 4,
+    dailyGoal: 6,
     soundEnabled: true,
   };
 
   const currentSettings = settings || defaultSettings;
 
   useEffect(() => {
-    localStorage.setItem("studyflow_currentTaskId", currentTaskId || "");
-    localStorage.setItem("studyflow_sessionType", sessionType);
-    localStorage.setItem("studyflow_timerState", timerState);
-    localStorage.setItem("studyflow_timeRemaining", timeRemaining.toString());
-    localStorage.setItem("studyflow_dailyIntention", dailyIntention);
-  }, [currentTaskId, sessionType, timerState, timeRemaining, dailyIntention]);
+    localStorage.setItem(dashboardStorageKey(user.id, "currentTaskId"), currentTaskId || "");
+    localStorage.setItem(dashboardStorageKey(user.id, "sessionType"), sessionType);
+    localStorage.setItem(dashboardStorageKey(user.id, "timerState"), timerState);
+    localStorage.setItem(dashboardStorageKey(user.id, "timeRemaining"), timeRemaining.toString());
+    localStorage.setItem(dashboardStorageKey(user.id, "dailyIntention"), dailyIntention);
+  }, [currentTaskId, dailyIntention, sessionType, timeRemaining, timerState, user.id]);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -441,6 +486,13 @@ export default function Dashboard({ user }: { user: User }) {
       queryClient.invalidateQueries({ queryKey: ["/api/sessions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
     },
+    onError: (error) => {
+      toast({
+        title: "Session not saved",
+        description: describeError(error, "The completed session could not be recorded."),
+        variant: "destructive",
+      });
+    },
   });
 
   const addTaskMutation = useMutation({
@@ -449,6 +501,13 @@ export default function Dashboard({ user }: { user: User }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Task not created",
+        description: describeError(error, "The task could not be added."),
+        variant: "destructive",
+      });
     },
   });
 
@@ -459,6 +518,13 @@ export default function Dashboard({ user }: { user: User }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
     },
+    onError: (error) => {
+      toast({
+        title: "Task not updated",
+        description: describeError(error, "The task status could not be changed."),
+        variant: "destructive",
+      });
+    },
   });
 
   const deleteTaskMutation = useMutation({
@@ -468,6 +534,33 @@ export default function Dashboard({ user }: { user: User }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
     },
+    onError: (error) => {
+      toast({
+        title: "Task not deleted",
+        description: describeError(error, "The task could not be removed."),
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateTaskMutation = useMutation({
+    mutationFn: async (data: { id: string; title: string; notes: string; estimatedPomodoros: number }) => {
+      return apiRequest("PATCH", `/api/tasks/${data.id}`, {
+        title: data.title,
+        notes: data.notes,
+        estimatedPomodoros: data.estimatedPomodoros,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Task not saved",
+        description: describeError(error, "The task details could not be saved."),
+        variant: "destructive",
+      });
+    },
   });
 
   const updateSettingsMutation = useMutation({
@@ -476,6 +569,13 @@ export default function Dashboard({ user }: { user: User }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Settings not saved",
+        description: describeError(error, "The timer settings could not be updated."),
+        variant: "destructive",
+      });
     },
   });
 
@@ -496,6 +596,13 @@ export default function Dashboard({ user }: { user: User }) {
       queryClient.removeQueries({ queryKey: ["/api/sessions"] });
       queryClient.removeQueries({ queryKey: ["/api/settings"] });
     },
+    onError: (error) => {
+      toast({
+        title: "Sign out failed",
+        description: describeError(error, "The current session could not be closed."),
+        variant: "destructive",
+      });
+    },
   });
 
   const incompleteTasks = tasks.filter((task) => !task.completed);
@@ -509,6 +616,19 @@ export default function Dashboard({ user }: { user: User }) {
       setCurrentTaskId(null);
     }
   }, [currentTask, currentTaskId]);
+
+  useEffect(() => {
+    if (!currentTask) {
+      setTaskDraftTitle("");
+      setTaskDraftNotes("");
+      setTaskDraftPomodoros(1);
+      return;
+    }
+
+    setTaskDraftTitle(currentTask.title);
+    setTaskDraftNotes(currentTask.notes);
+    setTaskDraftPomodoros(currentTask.estimatedPomodoros);
+  }, [currentTask]);
 
   const totalWorkSessions = sessions.filter((session) => session.type === "work").length;
 
@@ -608,6 +728,25 @@ export default function Dashboard({ user }: { user: User }) {
     setCurrentTaskId((previous) => (previous === id ? null : id));
   };
 
+  const handleSkipSession = useCallback(() => {
+    const nextSessionType: SessionType = sessionType === "work" ? "shortBreak" : "work";
+    setTimerState("idle");
+    setSessionType(nextSessionType);
+    setTimeRemaining(getDuration(nextSessionType));
+  }, [getDuration, sessionType]);
+
+  const handleSaveTaskDetails = () => {
+    if (!currentTask) return;
+    if (!taskDraftTitle.trim()) return;
+
+    updateTaskMutation.mutate({
+      id: currentTask.id,
+      title: taskDraftTitle.trim(),
+      notes: taskDraftNotes.trim(),
+      estimatedPomodoros: taskDraftPomodoros,
+    });
+  };
+
   const progress = Math.max(0, Math.min(1, 1 - timeRemaining / getDuration(sessionType)));
   const circumference = 2 * Math.PI * 148;
   const strokeDashoffset = circumference * (1 - progress);
@@ -641,6 +780,17 @@ export default function Dashboard({ user }: { user: User }) {
   const currentTaskRemainingPomodoros = currentTask
     ? Math.max(currentTask.estimatedPomodoros - currentTask.completedPomodoros, 0)
     : 0;
+  const goalProgress = Math.min(
+    100,
+    Math.round((todayWorkSessions.length / Math.max(currentSettings.dailyGoal, 1)) * 100),
+  );
+  const remainingGoalSessions = Math.max(currentSettings.dailyGoal - todayWorkSessions.length, 0);
+  const minimumTaskDraftPomodoros = Math.max(currentTask?.completedPomodoros ?? 0, 1);
+  const hasTaskDraftChanges = currentTask
+    ? taskDraftTitle.trim() !== currentTask.title ||
+      taskDraftNotes !== currentTask.notes ||
+      taskDraftPomodoros !== currentTask.estimatedPomodoros
+    : false;
   const activeAmbienceOption = AMBIENCE_OPTIONS.find((option) => option.id === activeAmbience);
   const modeDetails = MODE_OPTIONS.find((mode) => mode.id === sessionType)!;
   const dailyQuote = DAILY_QUOTES[now.getDate() % DAILY_QUOTES.length];
@@ -782,7 +932,7 @@ export default function Dashboard({ user }: { user: User }) {
                 </div>
               </div>
 
-              <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
                 <SummaryCard
                   label="Sessions Today"
                   value={`${todayWorkSessions.length}`}
@@ -801,6 +951,16 @@ export default function Dashboard({ user }: { user: User }) {
                   value={`${focusStreak}`}
                   detail="Consecutive days with at least one focus session."
                   icon={<CheckCircle2 className="h-4 w-4" />}
+                />
+                <SummaryCard
+                  label="Goal"
+                  value={`${todayWorkSessions.length}/${currentSettings.dailyGoal}`}
+                  detail={
+                    remainingGoalSessions === 0
+                      ? "Daily goal reached."
+                      : `${remainingGoalSessions} more session${remainingGoalSessions === 1 ? "" : "s"} to hit today’s target.`
+                  }
+                  icon={<Target className="h-4 w-4" />}
                 />
                 <SummaryCard
                   label="Pending Blocks"
@@ -849,6 +1009,26 @@ export default function Dashboard({ user }: { user: User }) {
                     {activeAmbienceOption && currentSettings.soundEnabled
                       ? "Ambient texture is active."
                       : "Sound stays optional until it helps."}
+                  </p>
+                </div>
+
+                <div className="border border-border bg-background/40 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[11px] uppercase tracking-[0.32em] text-muted-foreground">
+                      Goal Track
+                    </p>
+                    <span className="font-mono text-sm tabular-nums text-muted-foreground">
+                      {goalProgress}%
+                    </span>
+                  </div>
+                  <div className="mt-3 h-3 border border-border bg-background/50 p-[3px]">
+                    <div
+                      className="h-full bg-foreground transition-[width] duration-300"
+                      style={{ width: `${goalProgress}%` }}
+                    />
+                  </div>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    {todayWorkSessions.length}/{currentSettings.dailyGoal} focus sessions completed today
                   </p>
                 </div>
 
@@ -1044,6 +1224,15 @@ export default function Dashboard({ user }: { user: User }) {
                       <RotateCcw className="h-5 w-5 text-muted-foreground" />
                     </button>
                     <button
+                      className="flex h-14 min-w-[56px] items-center justify-center border border-border bg-background/50 px-4 transition-colors hover:bg-background/80"
+                      data-testid="button-timer-skip"
+                      onClick={handleSkipSession}
+                      title="Skip to the next session"
+                      type="button"
+                    >
+                      <FastForward className="h-5 w-5 text-muted-foreground" />
+                    </button>
+                    <button
                       className={cn(
                         "flex h-14 w-14 items-center justify-center border bg-background/50 transition-colors hover:bg-background/80",
                         currentSettings.soundEnabled ? "border-border" : "border-border/60 opacity-65",
@@ -1080,7 +1269,7 @@ export default function Dashboard({ user }: { user: User }) {
                     </button>
                   </div>
 
-                  <div className="mt-8 grid w-full gap-3 sm:grid-cols-3">
+                  <div className="mt-8 grid w-full gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     <SummaryCard
                       detail="completed work sessions recorded for today"
                       icon={<CalendarDays className="h-4 w-4" />}
@@ -1098,6 +1287,16 @@ export default function Dashboard({ user }: { user: User }) {
                       icon={<ChevronRight className="h-4 w-4" />}
                       label="Cycle"
                       value={`${cycleProgress}/${currentSettings.sessionsUntilLongBreak}`}
+                    />
+                    <SummaryCard
+                      detail={
+                        remainingGoalSessions === 0
+                          ? "Daily goal reached."
+                          : `${remainingGoalSessions} sessions left today`
+                      }
+                      icon={<Target className="h-4 w-4" />}
+                      label="Goal"
+                      value={`${todayWorkSessions.length}/${currentSettings.dailyGoal}`}
                     />
                   </div>
                 </div>
@@ -1117,7 +1316,7 @@ export default function Dashboard({ user }: { user: User }) {
                     </p>
                   </div>
 
-                  <div className="mt-6 grid gap-4 lg:grid-cols-4">
+                  <div className="mt-6 grid gap-4 lg:grid-cols-5">
                     {[
                       {
                         key: "workDuration" as const,
@@ -1152,6 +1351,15 @@ export default function Dashboard({ user }: { user: User }) {
                         value: currentSettings.sessionsUntilLongBreak,
                         min: 2,
                         max: 6,
+                        step: 1,
+                        suffix: "sessions",
+                      },
+                      {
+                        key: "dailyGoal" as const,
+                        label: "Daily Goal",
+                        value: currentSettings.dailyGoal,
+                        min: 1,
+                        max: 12,
                         step: 1,
                         suffix: "sessions",
                       },
@@ -1203,15 +1411,15 @@ export default function Dashboard({ user }: { user: User }) {
                         {[
                           {
                             label: "Classic 25",
-                            values: { workDuration: 25, shortBreakDuration: 5, longBreakDuration: 15 },
+                            values: { workDuration: 25, shortBreakDuration: 5, longBreakDuration: 15, dailyGoal: 6 },
                           },
                           {
                             label: "Deep 50",
-                            values: { workDuration: 50, shortBreakDuration: 10, longBreakDuration: 20 },
+                            values: { workDuration: 50, shortBreakDuration: 10, longBreakDuration: 20, dailyGoal: 4 },
                           },
                           {
                             label: "Sprint 15",
-                            values: { workDuration: 15, shortBreakDuration: 3, longBreakDuration: 10 },
+                            values: { workDuration: 15, shortBreakDuration: 3, longBreakDuration: 10, dailyGoal: 8 },
                           },
                         ].map((preset) => (
                           <button
@@ -1317,6 +1525,11 @@ export default function Dashboard({ user }: { user: User }) {
                                   <p className="mt-1 text-sm text-muted-foreground">
                                     {remainingPomodoros} block{remainingPomodoros === 1 ? "" : "s"} remaining
                                   </p>
+                                  {task.notes && (
+                                    <p className="mt-2 truncate text-xs text-muted-foreground/90">
+                                      {task.notes}
+                                    </p>
+                                  )}
                                 </div>
 
                                 <div className="flex items-center gap-2">
@@ -1405,6 +1618,87 @@ export default function Dashboard({ user }: { user: User }) {
                       </button>
                     ))}
                   </div>
+                </div>
+
+                <div className="mt-6 border border-border bg-background/45 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] uppercase tracking-[0.32em] text-muted-foreground">
+                        Selected Task
+                      </p>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Edit the title, notes, and block estimate for the task currently tied to your timer.
+                      </p>
+                    </div>
+                    {currentTask && (
+                      <span className="border border-foreground px-2 py-1 text-[11px] uppercase tracking-[0.2em] text-foreground">
+                        Active
+                      </span>
+                    )}
+                  </div>
+
+                  {currentTask ? (
+                    <div className="mt-5 space-y-4">
+                      <Input
+                        className="h-11 border-border bg-background/70"
+                        onChange={(event) => setTaskDraftTitle(event.target.value)}
+                        placeholder="Task title"
+                        value={taskDraftTitle}
+                      />
+
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span className="text-[11px] uppercase tracking-[0.32em] text-muted-foreground">
+                          Planned blocks
+                        </span>
+                        <Button
+                          className="h-9 w-9"
+                          onClick={() =>
+                            setTaskDraftPomodoros((value) => Math.max(minimumTaskDraftPomodoros, value - 1))
+                          }
+                          size="icon"
+                          variant="outline"
+                        >
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                        <span className="min-w-[40px] text-center font-mono text-lg tabular-nums">
+                          {taskDraftPomodoros}
+                        </span>
+                        <Button
+                          className="h-9 w-9"
+                          onClick={() => setTaskDraftPomodoros((value) => Math.min(8, value + 1))}
+                          size="icon"
+                          variant="outline"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+
+                      <Textarea
+                        className="min-h-[120px] border-border bg-background/70 text-sm leading-6"
+                        onChange={(event) => setTaskDraftNotes(event.target.value)}
+                        placeholder="Add context, subtasks, or the exact chapter/problem set you want to finish."
+                        value={taskDraftNotes}
+                      />
+
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-sm text-muted-foreground">
+                          {currentTask.completedPomodoros}/{currentTask.estimatedPomodoros} blocks already completed
+                        </p>
+                        <Button
+                          disabled={!hasTaskDraftChanges || !taskDraftTitle.trim() || updateTaskMutation.isPending}
+                          onClick={handleSaveTaskDetails}
+                          variant="outline"
+                        >
+                          <Save className="mr-2 h-4 w-4" />
+                          Save task details
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="mt-5 text-sm text-muted-foreground">
+                      Select a task from the list to edit its details and add notes.
+                    </p>
+                  )}
                 </div>
 
                 <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(220px,0.7fr)]">

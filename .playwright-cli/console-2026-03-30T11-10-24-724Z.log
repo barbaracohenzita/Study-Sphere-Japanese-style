@@ -1,0 +1,5 @@
+[   43914ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://127.0.0.1:5001/api/auth/register:0
+[   49304ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://127.0.0.1:5001/api/auth/login:0
+[   50649ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://127.0.0.1:5001/api/auth/login:0
+[  545190ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://127.0.0.1:5001/api/auth/login:0
+[  550890ms] [ERROR] Failed to load resource: the server responded with a status of 409 (Conflict) @ http://127.0.0.1:5001/api/auth/register:0

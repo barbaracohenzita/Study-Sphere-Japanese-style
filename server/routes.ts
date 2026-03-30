@@ -5,6 +5,8 @@ import {
   insertSessionSchema,
   loginUserSchema,
   registerUserSchema,
+  updateSettingsSchema,
+  updateTaskSchema,
 } from "@shared/schema";
 import { hashPassword, verifyPassword } from "./auth";
 import { storage } from "./storage";
@@ -169,6 +171,24 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/tasks/:id", async (req, res) => {
+    try {
+      const parsed = updateTaskSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.message });
+      }
+
+      const task = await storage.updateTask(req.session.userId!, req.params.id, parsed.data);
+      if (!task) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+
+      res.json(task);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update task" });
+    }
+  });
+
   app.delete("/api/tasks/:id", async (req, res) => {
     try {
       const deleted = await storage.deleteTask(req.session.userId!, req.params.id);
@@ -216,7 +236,12 @@ export async function registerRoutes(
 
   app.patch("/api/settings", async (req, res) => {
     try {
-      const settings = await storage.updateSettings(req.session.userId!, req.body);
+      const parsed = updateSettingsSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.message });
+      }
+
+      const settings = await storage.updateSettings(req.session.userId!, parsed.data);
       res.json(settings);
     } catch (error) {
       res.status(500).json({ error: "Failed to update settings" });

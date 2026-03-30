@@ -17,6 +17,7 @@ const defaultSettings = (): Settings => ({
   shortBreakDuration: 5,
   longBreakDuration: 15,
   sessionsUntilLongBreak: 4,
+  dailyGoal: 6,
   soundEnabled: true,
 });
 
@@ -122,6 +123,7 @@ export class MemStorage implements IStorage {
     const task: Task = {
       id,
       title: insertTask.title,
+      notes: insertTask.notes ?? "",
       completed: insertTask.completed ?? false,
       estimatedPomodoros: insertTask.estimatedPomodoros ?? 1,
       completedPomodoros: insertTask.completedPomodoros ?? 0,
@@ -136,7 +138,18 @@ export class MemStorage implements IStorage {
     const task = workspace.tasks.get(id);
     if (!task) return undefined;
 
-    const updatedTask = { ...task, ...updates };
+    const completedPomodoros = updates.completedPomodoros ?? task.completedPomodoros;
+    const estimatedPomodoros = Math.max(
+      updates.estimatedPomodoros ?? task.estimatedPomodoros,
+      completedPomodoros,
+      1,
+    );
+    const updatedTask = {
+      ...task,
+      ...updates,
+      completedPomodoros,
+      estimatedPomodoros,
+    };
     workspace.tasks.set(id, updatedTask);
     return updatedTask;
   }

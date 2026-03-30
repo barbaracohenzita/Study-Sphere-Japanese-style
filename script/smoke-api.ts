@@ -15,12 +15,14 @@ type Settings = {
   shortBreakDuration: number;
   longBreakDuration: number;
   sessionsUntilLongBreak: number;
+  dailyGoal: number;
   soundEnabled: boolean;
 };
 
 type Task = {
   id: string;
   title: string;
+  notes: string;
   completed: boolean;
   estimatedPomodoros: number;
   completedPomodoros: number;
@@ -142,6 +144,29 @@ async function requestJson<T>(
   };
 }
 
+async function requestStatus(
+  baseUrl: string,
+  route: string,
+  cookieJar: string,
+  init?: RequestInit,
+) {
+  const headers = new Headers(init?.headers);
+  if (cookieJar) {
+    headers.set("cookie", cookieJar);
+  }
+
+  const response = await fetch(`${baseUrl}${route}`, {
+    ...init,
+    headers,
+  });
+
+  return {
+    cookieJar: updateCookieJar(cookieJar, response),
+    status: response.status,
+    text: await response.text(),
+  };
+}
+
 function startServer(port: number) {
   const tsxPath = path.resolve("node_modules/.bin/tsx");
   const child = spawn(tsxPath, ["server/index.ts"], {
@@ -225,18 +250,67 @@ async function main() {
     const settings = await requestJson<Settings>(baseUrl, "/api/settings", cookieJar);
     cookieJar = settings.cookieJar;
     assert(settings.data.workDuration === 25, "Expected default work duration to be 25");
+    assert(settings.data.dailyGoal === 6, "Expected default daily goal to be 6");
 
     const createdTask = await requestJson<Task>(baseUrl, "/api/tasks", cookieJar, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         title: "Smoke task",
+        notes: "Initial note",
         estimatedPomodoros: 2,
       }),
     });
     cookieJar = createdTask.cookieJar;
     assert(createdTask.data.title === "Smoke task", "Task title did not round-trip");
+    assert(createdTask.data.notes === "Initial note", "Task notes did not round-trip");
     assert(createdTask.data.completed === false, "New task should start incomplete");
+
+    const invalidTask = await requestStatus(baseUrl, "/api/tasks", cookieJar, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: "   ",
+        estimatedPomodoros: 0,
+      }),
+    });
+    assert(invalidTask.status === 400, `Expected invalid task payload to fail, received ${invalidTask.status}`);
+
+    const updatedTask = await requestJson<Task>(
+      baseUrl,
+      `/api/tasks/${createdTask.data.id}`,
+      cookieJar,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: "Smoke task edited",
+          notes: "Edited note",
+          estimatedPomodoros: 3,
+        }),
+      },
+    );
+    cookieJar = updatedTask.cookieJar;
+    assert(updatedTask.data.title === "Smoke task edited", "Task update did not persist the title");
+    assert(updatedTask.data.notes === "Edited note", "Task update did not persist the notes");
+    assert(updatedTask.data.estimatedPomodoros === 3, "Task update did not persist the estimate");
+
+    const invalidTaskUpdate = await requestStatus(
+      baseUrl,
+      `/api/tasks/${createdTask.data.id}`,
+      cookieJar,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          estimatedPomodoros: 0,
+        }),
+      },
+    );
+    assert(
+      invalidTaskUpdate.status === 400,
+      `Expected invalid task update to fail, received ${invalidTaskUpdate.status}`,
+    );
 
     const toggledTask = await requestJson<Task>(
       baseUrl,
@@ -252,10 +326,24 @@ async function main() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         soundEnabled: false,
+        dailyGoal: 7,
       }),
     });
     cookieJar = updatedSettings.cookieJar;
     assert(updatedSettings.data.soundEnabled === false, "Settings patch did not persist");
+    assert(updatedSettings.data.dailyGoal === 7, "Settings patch did not persist the daily goal");
+
+    const invalidSettings = await requestStatus(baseUrl, "/api/settings", cookieJar, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        dailyGoal: 0,
+      }),
+    });
+    assert(
+      invalidSettings.status === 400,
+      `Expected invalid settings update to fail, received ${invalidSettings.status}`,
+    );
 
     const createdSession = await requestJson<Session>(baseUrl, "/api/sessions", cookieJar, {
       method: "POST",
