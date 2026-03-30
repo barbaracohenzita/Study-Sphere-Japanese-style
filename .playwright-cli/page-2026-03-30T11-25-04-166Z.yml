@@ -1,0 +1,54 @@
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - generic [ref=e8]:
+          - generic [ref=e9]:
+            - paragraph [ref=e10]: StudyFlow
+            - heading "A quiet login for a focused workspace." [level=1] [ref=e11]
+          - button "Toggle theme" [ref=e12] [cursor=pointer]:
+            - img
+        - paragraph [ref=e13]: Sign in to keep the dashboard, timer, and task ledger scoped to your account. This local build uses in-memory auth, so accounts reset when the dev server restarts.
+        - generic [ref=e14]:
+          - generic [ref=e15]:
+            - paragraph [ref=e16]: Private workspace
+            - paragraph [ref=e17]: Tasks, sessions, and timer settings are now isolated per signed-in user.
+          - generic [ref=e18]:
+            - paragraph [ref=e19]: Session-backed
+            - paragraph [ref=e20]: Auth uses a real server session instead of a client-only flag.
+          - generic [ref=e21]:
+            - paragraph [ref=e22]: Designed to flow
+            - paragraph [ref=e23]: The login screen follows the same restrained, paper-like visual system.
+      - generic [ref=e24]: Create an account once, then the dashboard will open automatically inside the current browser session.
+    - generic [ref=e26]:
+      - generic [ref=e27]:
+        - button "Sign in" [ref=e28] [cursor=pointer]
+        - button "Create account" [active] [ref=e29] [cursor=pointer]
+      - generic [ref=e30]:
+        - paragraph [ref=e31]: New workspace
+        - heading "Create your account" [level=2] [ref=e49]
+      - generic [ref=e33]:
+        - generic [ref=e50]:
+          - text: Display name
+          - generic [ref=e51]:
+            - img [ref=e52]
+            - textbox "Display name" [ref=e55]:
+              - /placeholder: Aiko Tanaka
+        - generic [ref=e34]:
+          - text: Email
+          - generic [ref=e35]:
+            - img [ref=e36]
+            - textbox "Email" [ref=e39]:
+              - /placeholder: you@example.com
+              - text: barbaracohenguilhem@gmail.com
+        - generic [ref=e40]:
+          - text: Password
+          - generic [ref=e41]:
+            - img [ref=e42]
+            - textbox "Password" [ref=e46]:
+              - /placeholder: Minimum 8 characters
+        - button "Create account" [ref=e56] [cursor=pointer]:
+          - generic [ref=e48]: Create account
+          - img
