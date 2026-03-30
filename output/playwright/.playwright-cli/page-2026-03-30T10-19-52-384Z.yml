@@ -1,0 +1,74 @@
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - heading "書斎 StudyFlow" [level=1] [ref=e6]
+        - navigation [ref=e7]:
+          - generic [ref=e8]: Timer
+          - generic [ref=e9]: History
+        - generic [ref=e10]:
+          - generic [ref=e11]:
+            - generic [ref=e12]: Today
+            - generic [ref=e13]: 0 sessions
+          - button "Toggle theme" [ref=e14] [cursor=pointer]:
+            - img
+    - generic [ref=e15]:
+      - paragraph [ref=e16]: Focus Timer
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - generic [ref=e19]:
+            - button "Focus" [ref=e20] [cursor=pointer]
+            - button "Break" [ref=e21] [cursor=pointer]
+          - generic [ref=e22]:
+            - img [ref=e23]
+            - generic [ref=e26]:
+              - generic [ref=e27]: 25:00
+              - generic [ref=e28]: Focus
+          - generic [ref=e30]:
+            - button "Start" [ref=e31] [cursor=pointer]:
+              - img [ref=e32]
+            - button "Reset" [ref=e34] [cursor=pointer]:
+              - img [ref=e35]
+            - button "Sound On" [ref=e38] [cursor=pointer]:
+              - img [ref=e39]
+            - button "Settings" [ref=e43] [cursor=pointer]:
+              - img [ref=e44]
+          - generic [ref=e47]:
+            - generic [ref=e48]:
+              - generic [ref=e49]: "0"
+              - generic [ref=e50]: Sessions
+            - generic [ref=e51]:
+              - generic [ref=e52]: "0"
+              - generic [ref=e53]: Minutes
+            - generic [ref=e54]:
+              - generic [ref=e55]: "1"
+              - generic [ref=e56]: Streak
+        - generic [ref=e57]:
+          - generic [ref=e58]:
+            - heading "Today's Focus" [level=2] [ref=e59]
+            - paragraph [ref=e60]: 0 tasks remaining
+          - paragraph [ref=e62]: No tasks yet
+          - generic [ref=e63]:
+            - generic [ref=e64]:
+              - textbox "What will you focus on?" [ref=e65]
+              - button [ref=e66] [cursor=pointer]:
+                - img
+            - generic [ref=e67]:
+              - generic [ref=e68]: "Sessions:"
+              - button "1" [ref=e69] [cursor=pointer]
+              - button "2" [ref=e70] [cursor=pointer]
+              - button "3" [ref=e71] [cursor=pointer]
+              - button "4" [ref=e72] [cursor=pointer]
+          - generic [ref=e73]:
+            - generic [ref=e75]: Ambience
+            - generic [ref=e76]:
+              - button "Rain" [ref=e77] [cursor=pointer]:
+                - img [ref=e78]
+              - button "Cafe" [ref=e80] [cursor=pointer]:
+                - img [ref=e81]
+              - button "Wind" [ref=e83] [cursor=pointer]:
+                - img [ref=e84]
+              - button "Fire" [ref=e88] [cursor=pointer]:
+                - img [ref=e89]
