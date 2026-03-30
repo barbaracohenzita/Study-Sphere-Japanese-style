@@ -53,13 +53,13 @@ export async function registerRoutes(
     try {
       const userId = req.session.userId;
       if (!userId) {
-        return res.status(401).json({ message: "Unauthorized" });
+        return res.json(null);
       }
 
       const user = await storage.getUser(userId);
       if (!user) {
         await destroySession(req, res);
-        return res.status(401).json({ message: "Unauthorized" });
+        return res.json(null);
       }
 
       res.json(user);
