@@ -28,7 +28,7 @@ import {
   VolumeX,
   Wind,
 } from "lucide-react";
-import type { Task, Settings as SettingsType, Session, SessionType } from "@shared/schema";
+import type { Task, Settings as SettingsType, Session, SessionType, User } from "@shared/schema";
 
 type TimerState = "idle" | "running" | "paused";
 
@@ -337,7 +337,7 @@ function SummaryCard({
   );
 }
 
-export default function Dashboard() {
+export default function Dashboard({ user }: { user: User }) {
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(() => {
     return localStorage.getItem("studyflow_currentTaskId") || null;
   });
@@ -476,6 +476,25 @@ export default function Dashboard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
+    },
+  });
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to sign out");
+      }
+    },
+    onSuccess: () => {
+      queryClient.setQueryData(["/api/auth/user"], null);
+      queryClient.removeQueries({ queryKey: ["/api/tasks"] });
+      queryClient.removeQueries({ queryKey: ["/api/sessions"] });
+      queryClient.removeQueries({ queryKey: ["/api/settings"] });
     },
   });
 
@@ -676,9 +695,14 @@ export default function Dashboard() {
 
           <div className="flex items-center gap-3">
             <div className="hidden text-right sm:block">
-              <p className="text-[11px] uppercase tracking-[0.32em] text-muted-foreground">{headerDate}</p>
-              <p className="font-mono text-sm tabular-nums">{headerTime}</p>
+              <p className="text-[11px] uppercase tracking-[0.32em] text-muted-foreground">
+                {user.name}
+              </p>
+              <p className="font-mono text-sm tabular-nums">{headerDate} · {headerTime}</p>
             </div>
+            <Button onClick={() => logoutMutation.mutate()} size="sm" variant="outline">
+              Log out
+            </Button>
             <ThemeToggle />
           </div>
         </div>
