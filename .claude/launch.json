@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Study Sphere Dev Server",
+      "runtimeExecutable": "/Users/baba/.nvm/versions/node/v24.13.0/bin/node",
+      "runtimeArgs": ["/Users/baba/Downloads/Code-Projects/Study-Sphere-Japanese-style 2/node_modules/.bin/tsx", "server/index.ts"],
+      "port": 3000,
+      "env": { "NODE_ENV": "development" }
+    },
+    {
+      "name": "Study Sphere Production",
+      "runtimeExecutable": "/Users/baba/.nvm/versions/node/v24.13.0/bin/node",
+      "runtimeArgs": ["dist/index.cjs"],
+      "port": 3000,
+      "env": { "NODE_ENV": "production" }
+    }
+  ]
+}

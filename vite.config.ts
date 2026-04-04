@@ -34,7 +34,10 @@ export default defineConfig({
   server: {
     fs: {
       strict: true,
-      deny: ["**/.*"],
+      allow: [
+        path.resolve(import.meta.dirname),
+        path.resolve(import.meta.dirname, "..", "..",".."),
+      ],
     },
   },
 });
