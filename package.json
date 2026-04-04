@@ -4,11 +4,11 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "dev": "NODE_ENV=development tsx server/index.ts",
-    "build": "tsx script/build.ts",
+    "dev": "NODE_ENV=development node --import tsx server/index.ts",
+    "build": "node --import tsx script/build.ts",
     "start": "NODE_ENV=production node dist/index.cjs",
     "check": "tsc",
-    "smoke": "tsx script/smoke-api.ts",
+    "smoke": "node --import tsx script/smoke-api.ts",
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
