@@ -110,14 +110,44 @@ app.use((req, res, next) => {
   // Other ports are firewalled. Default to 5000 if not specified.
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || "5000", 10);
-  httpServer.listen(
-    {
-      port,
-      host: "0.0.0.0",
-    },
-    () => {
-      log(`serving on port ${port}`);
-    },
+  const portFromEnv = process.env.PORT ? parseInt(process.env.PORT, 10) : null;
+  const defaultPort = 5000;
+
+  async function listenOnPort(port: number) {
+    return await new Promise<void>((resolve, reject) => {
+      httpServer.once("error", reject);
+      httpServer.listen({ port, host: "0.0.0.0" }, () => {
+        httpServer.off("error", reject);
+        log(`serving on port ${port}`);
+        resolve();
+      });
+    });
+  }
+
+  const isDev = process.env.NODE_ENV !== "production";
+  const requestedPort = portFromEnv ?? defaultPort;
+
+  if (!isDev || portFromEnv) {
+    await listenOnPort(requestedPort);
+    return;
+  }
+
+  // Local dev convenience: if the default port is already in use, try a few
+  // subsequent ports automatically. This does not apply when PORT is set.
+  const maxAttempts = 20;
+  for (let i = 0; i < maxAttempts; i++) {
+    const candidate = requestedPort + i;
+    try {
+      await listenOnPort(candidate);
+      return;
+    } catch (err: any) {
+      if (err?.code !== "EADDRINUSE") throw err;
+    }
+  }
+
+  throw new Error(
+    `Could not find an open port in range ${requestedPort}-${
+      requestedPort + maxAttempts - 1
+    }`,
   );
 })();
