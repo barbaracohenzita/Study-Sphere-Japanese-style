@@ -175,12 +175,17 @@
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
   * {
     @apply border-border;
   }
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
+    min-height: 100vh;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
     background-blend-mode: soft-light;
     background-size: 200px 200px;
@@ -290,6 +295,36 @@
   .jp-paper {
     background-color: hsl(var(--card));
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  }
+
+  .jp-shell {
+    background:
+      radial-gradient(circle at top left, hsl(var(--accent) / 0.75), transparent 34%),
+      linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--background) / 0.92) 22%, hsl(var(--background)) 100%);
+  }
+
+  .dark .jp-shell {
+    background:
+      radial-gradient(circle at top left, hsl(var(--accent) / 0.32), transparent 34%),
+      linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--background) / 0.96) 24%, hsl(var(--background)) 100%);
+  }
+
+  .timer-breathing {
+    animation: timer-breathing 4s ease-in-out infinite;
+    transform-origin: center;
+  }
+
+  @keyframes timer-breathing {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    50% {
+      transform: scale(1.012);
+      opacity: 0.96;
+    }
   }
 }
 

@@ -1,0 +1,73 @@
+[1G[0K⠙[1G[0K
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[1G[0K⠙[1G[0K6:07:36 AM [express] serving on port 5000
+
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+6:07:43 AM [express] GET /api/tasks 200 in 2ms :: []
+6:07:43 AM [express] GET /api/settings 200 in 0ms :: {"id":"default","workDuration":25,"shortBreakDuration":5,"longBreakDuration":15,"sessionsUntilLongBreak":4,"soundEnabled":true}
+6:07:43 AM [express] GET /api/sessions 200 in 1ms :: []
+6:09:46 AM [express] GET /api/settings 200 in 1ms :: {"id":"default","workDuration":25,"shortBreakDuration":5,"longBreakDuration":15,"sessionsUntilLongBreak":4,"soundEnabled":true}
+6:09:46 AM [express] GET /api/tasks 200 in 1ms :: []
+6:09:46 AM [express] GET /api/sessions 200 in 1ms :: []
+6:15:14 AM [express] GET /api/tasks 304 in 1ms :: []
+6:15:14 AM [express] GET /api/settings 304 in 1ms :: {"id":"default","workDuration":25,"shortBreakDuration":5,"longBreakDuration":15,"sessionsUntilLongBreak":4,"soundEnabled":true}
+6:15:14 AM [express] GET /api/sessions 304 in 0ms :: []
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m6:15:48 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m
+6:17:14 AM [express] GET /api/sessions 200 in 0ms :: []
+6:17:14 AM [express] GET /api/settings 200 in 0ms :: {"id":"default","workDuration":25,"shortBreakDuration":5,"longBreakDuration":15,"sessionsUntilLongBreak":4,"soundEnabled":true}
+6:17:14 AM [express] GET /api/tasks 200 in 0ms :: []
