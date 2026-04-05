@@ -1,0 +1,46 @@
+{
+  "users": [
+    {
+      "id": "42de9a8b-fa26-45ef-b3b9-0cb77362c3e7",
+      "name": "kjhgj",
+      "email": "barbarac3@al.insper.edu.br",
+      "passwordHash": "f4c94225c749ad78f009e0554b5b6f3a:9c70324b336bd9f786f114878967f9777f48c4f627538719ed7f370a7ee09a6a8cb0d50bd17539a5fbbd9a9911e416ce177759362b62ab66f8a795cab1aa02f7"
+    },
+    {
+      "id": "cfbea358-4105-438d-b694-c69e9c97652f",
+      "name": "Test User",
+      "email": "test@test.com",
+      "passwordHash": "a999597597e83f3cd44ff3d5777dec8e:e6a65afa277e6ad9b938a687bb642f4e53dd5786def7c51e1e3322068bc497a5365ed849b3fabb49646beeef16b1a41ed69efa13072db316a9803e93778a7ebf"
+    }
+  ],
+  "workspaces": [
+    {
+      "userId": "42de9a8b-fa26-45ef-b3b9-0cb77362c3e7",
+      "tasks": [],
+      "sessions": [],
+      "settings": {
+        "id": "default",
+        "workDuration": 25,
+        "shortBreakDuration": 5,
+        "longBreakDuration": 15,
+        "sessionsUntilLongBreak": 4,
+        "dailyGoal": 6,
+        "soundEnabled": true
+      }
+    },
+    {
+      "userId": "cfbea358-4105-438d-b694-c69e9c97652f",
+      "tasks": [],
+      "sessions": [],
+      "settings": {
+        "id": "default",
+        "workDuration": 25,
+        "shortBreakDuration": 5,
+        "longBreakDuration": 15,
+        "sessionsUntilLongBreak": 4,
+        "dailyGoal": 6,
+        "soundEnabled": true
+      }
+    }
+  ]
+}
