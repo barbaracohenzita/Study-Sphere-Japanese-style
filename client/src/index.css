@@ -310,7 +310,7 @@
   }
 
   .timer-breathing {
-    animation: timer-breathing 4s ease-in-out infinite;
+    animation: timer-breathing 5s ease-in-out infinite;
     transform-origin: center;
   }
 
@@ -322,9 +322,85 @@
     }
 
     50% {
-      transform: scale(1.012);
-      opacity: 0.96;
+      transform: scale(1.025);
+      opacity: 0.94;
     }
+  }
+
+  /* Japanese kanji markers around the dial */
+  .jp-dial-marker {
+    fill: hsl(var(--muted-foreground));
+    font-family: var(--font-serif);
+    font-size: 14px;
+    letter-spacing: 0.05em;
+    opacity: 0.45;
+    transition: opacity 400ms ease;
+  }
+
+  .timer-breathing .jp-dial-marker {
+    opacity: 0.7;
+  }
+
+  /* Ink-stroke progress arc — slightly organic tapering */
+  .jp-ink-arc {
+    filter: drop-shadow(0 0 0.5px hsl(var(--foreground) / 0.3));
+    transition: stroke-dashoffset 900ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Ink drop entrance for cards */
+  .jp-enter {
+    animation: jp-enter 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .jp-enter-delay-1 { animation-delay: 60ms; }
+  .jp-enter-delay-2 { animation-delay: 120ms; }
+  .jp-enter-delay-3 { animation-delay: 180ms; }
+  .jp-enter-delay-4 { animation-delay: 240ms; }
+
+  @keyframes jp-enter {
+    0% {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Ink-draw: for SVG illustrations that trace themselves in */
+  .jp-ink-draw {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    animation: jp-ink-draw 1600ms cubic-bezier(0.65, 0, 0.35, 1) 120ms forwards;
+  }
+
+  @keyframes jp-ink-draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  /* Interactive button — subtle press/hover with Japanese restraint */
+  .jp-button {
+    transition:
+      border-color 200ms ease,
+      background-color 200ms ease,
+      transform 120ms ease;
+  }
+
+  .jp-button:hover {
+    border-color: hsl(var(--foreground) / 0.5);
+  }
+
+  .jp-button:active {
+    transform: translateY(1px);
+  }
+
+  /* Focus ring with Japanese double-border aesthetic */
+  .jp-focusable:focus-visible {
+    outline: 1px solid hsl(var(--foreground));
+    outline-offset: 3px;
   }
 }
 

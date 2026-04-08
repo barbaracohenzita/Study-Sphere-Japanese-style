@@ -1015,7 +1015,7 @@ export default function Dashboard({ user }: { user: User }) {
       <main className="jp-shell">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
           <section className="grid gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,0.9fr)]">
-            <div className="border border-border bg-card/90 p-6 sm:p-8 jp-paper">
+            <div className="border border-border bg-card/90 p-6 sm:p-8 jp-paper jp-enter">
               <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
                 <div className="max-w-2xl">
                   <p className="text-[11px] uppercase tracking-[0.42em] text-muted-foreground">
@@ -1125,7 +1125,7 @@ export default function Dashboard({ user }: { user: User }) {
               </div>
             </div>
 
-            <aside className="border border-border bg-card/85 p-6 jp-paper">
+            <aside className="border border-border bg-card/85 p-6 jp-paper jp-enter jp-enter-delay-1">
               <p className="text-[11px] uppercase tracking-[0.42em] text-muted-foreground">
                 At A Glance
               </p>
@@ -1206,7 +1206,7 @@ export default function Dashboard({ user }: { user: User }) {
             id="dashboard"
           >
             <div className="space-y-6">
-              <section className="border border-border bg-card/90 p-6 sm:p-8 jp-paper">
+              <section className="border border-border bg-card/90 p-6 sm:p-8 jp-paper jp-enter jp-enter-delay-2">
                 <div className="flex flex-col gap-6 border-b border-border pb-6">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                     <div>
@@ -1225,7 +1225,7 @@ export default function Dashboard({ user }: { user: User }) {
                       <button
                         key={mode.id}
                         className={cn(
-                          "border px-4 py-3 text-left transition-colors hover:bg-background/70",
+                          "jp-button jp-focusable border px-4 py-3 text-left hover:bg-background/70",
                           sessionType === mode.id
                             ? "border-foreground bg-background text-foreground"
                             : "border-border text-muted-foreground",
@@ -1270,41 +1270,63 @@ export default function Dashboard({ user }: { user: User }) {
                         r="148"
                         fill="none"
                         stroke="hsl(var(--border))"
-                        strokeWidth="4"
+                        strokeWidth="2"
+                        opacity="0.7"
                       />
                       {Array.from({ length: currentSettings.sessionsUntilLongBreak }).map((_, index) => {
                         const angle =
                           ((index / currentSettings.sessionsUntilLongBreak) * 360 - 90) * (Math.PI / 180);
-                        const x1 = 160 + 138 * Math.cos(angle);
-                        const y1 = 160 + 138 * Math.sin(angle);
-                        const x2 = 160 + 154 * Math.cos(angle);
-                        const y2 = 160 + 154 * Math.sin(angle);
+                        const cx = 160 + 148 * Math.cos(angle);
+                        const cy = 160 + 148 * Math.sin(angle);
                         const isFilled = index < cycleProgress;
 
                         return (
-                          <line
+                          <circle
                             key={index}
-                            x1={x1}
-                            y1={y1}
-                            x2={x2}
-                            y2={y2}
-                            stroke={isFilled ? "hsl(var(--foreground))" : "hsl(var(--border))"}
-                            strokeWidth={2.5}
+                            cx={cx}
+                            cy={cy}
+                            r={isFilled ? 3.5 : 2}
+                            fill={isFilled ? "hsl(var(--foreground))" : "hsl(var(--border))"}
                           />
                         );
                       })}
                       <circle
+                        className="jp-ink-arc"
                         cx="160"
                         cy="160"
                         r="148"
                         fill="none"
                         stroke={sessionType === "work" ? "hsl(var(--foreground))" : "hsl(var(--primary))"}
-                        strokeWidth="4"
-                        strokeLinecap="square"
+                        strokeWidth="5"
+                        strokeLinecap="round"
                         strokeDasharray={circumference}
                         strokeDashoffset={strokeDashoffset}
                       />
+                      {progress > 0.002 && progress < 0.998 && (() => {
+                        const endAngle = progress * 2 * Math.PI;
+                        const endX = 160 + 148 * Math.cos(endAngle);
+                        const endY = 160 + 148 * Math.sin(endAngle);
+                        return (
+                          <circle
+                            cx={endX}
+                            cy={endY}
+                            r="4"
+                            fill={sessionType === "work" ? "hsl(var(--foreground))" : "hsl(var(--primary))"}
+                          />
+                        );
+                      })()}
                     </svg>
+
+                    <div
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-0 flex items-center justify-center"
+                    >
+                      <span
+                        className="select-none font-serif text-[11rem] leading-none text-foreground/[0.04] sm:text-[13rem]"
+                      >
+                        {sessionType === "work" ? "集" : sessionType === "shortBreak" ? "息" : "静"}
+                      </span>
+                    </div>
 
                     <div
                       aria-atomic="true"
@@ -1353,7 +1375,7 @@ export default function Dashboard({ user }: { user: User }) {
 
                   <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                     <button
-                      className="flex h-14 w-14 items-center justify-center border-2 border-foreground bg-background/80 transition-colors hover:bg-background"
+                      className="jp-button jp-focusable flex h-14 w-14 items-center justify-center border-2 border-foreground bg-background/80 hover:bg-background"
                       data-testid="button-timer-toggle"
                       onClick={handleToggleTimer}
                       title={timerState === "running" ? "Pause" : "Start"}
@@ -1366,7 +1388,7 @@ export default function Dashboard({ user }: { user: User }) {
                       )}
                     </button>
                     <button
-                      className="flex h-14 w-14 items-center justify-center border border-border bg-background/50 transition-colors hover:bg-background/80"
+                      className="jp-button jp-focusable flex h-14 w-14 items-center justify-center border border-border bg-background/50 hover:bg-background/80"
                       data-testid="button-timer-reset"
                       onClick={handleResetTimer}
                       title="Reset"
@@ -1375,7 +1397,7 @@ export default function Dashboard({ user }: { user: User }) {
                       <RotateCcw className="h-5 w-5 text-muted-foreground" />
                     </button>
                     <button
-                      className="flex h-14 min-w-[56px] items-center justify-center border border-border bg-background/50 px-4 transition-colors hover:bg-background/80"
+                      className="jp-button jp-focusable flex h-14 min-w-[56px] items-center justify-center border border-border bg-background/50 px-4 hover:bg-background/80"
                       data-testid="button-timer-skip"
                       onClick={handleSkipSession}
                       title="Skip to the next session"
@@ -1385,7 +1407,7 @@ export default function Dashboard({ user }: { user: User }) {
                     </button>
                     <button
                       className={cn(
-                        "flex h-14 w-14 items-center justify-center border bg-background/50 transition-colors hover:bg-background/80",
+                        "jp-button jp-focusable flex h-14 w-14 items-center justify-center border bg-background/50 hover:bg-background/80",
                         currentSettings.soundEnabled ? "border-border" : "border-border/60 opacity-65",
                       )}
                       data-testid="button-toggle-sound"
@@ -1401,7 +1423,7 @@ export default function Dashboard({ user }: { user: User }) {
                     </button>
                     <button
                       className={cn(
-                        "flex h-14 min-w-[56px] items-center justify-center border px-4 transition-colors",
+                        "jp-button jp-focusable flex h-14 min-w-[56px] items-center justify-center border px-4",
                         showSettings
                           ? "border-foreground bg-background text-foreground"
                           : "border-border bg-background/50 text-muted-foreground hover:bg-background/80",
@@ -1608,7 +1630,7 @@ export default function Dashboard({ user }: { user: User }) {
             </div>
 
             <div className="space-y-6">
-              <section className="border border-border bg-card/90 p-6 sm:p-8 jp-paper">
+              <section className="border border-border bg-card/90 p-6 sm:p-8 jp-paper jp-enter jp-enter-delay-3">
                 <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
                   <div>
                     <p className="text-[11px] uppercase tracking-[0.42em] text-muted-foreground">
@@ -1637,6 +1659,22 @@ export default function Dashboard({ user }: { user: User }) {
                 <div className="mt-6 space-y-3">
                   {incompleteTasks.length === 0 ? (
                     <div className="border border-dashed border-border bg-background/40 p-8 text-center">
+                      <svg
+                        aria-hidden="true"
+                        className="mx-auto mb-5 text-muted-foreground/70"
+                        fill="none"
+                        height="64"
+                        viewBox="0 0 100 100"
+                        width="64"
+                      >
+                        <path
+                          className="jp-ink-draw"
+                          d="M 82 50 A 32 32 0 1 1 32 22"
+                          stroke="currentColor"
+                          strokeLinecap="round"
+                          strokeWidth="2.5"
+                        />
+                      </svg>
                       <p className="font-serif text-xl">No active tasks yet.</p>
                       <p className="mt-2 text-sm text-muted-foreground">
                         Add one concrete task and pair it with a timer block.
@@ -1869,7 +1907,33 @@ export default function Dashboard({ user }: { user: User }) {
                     </div>
                     <div className="mt-4 space-y-3">
                       {completedTasks.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">Completed tasks will collect here.</p>
+                        <div className="py-4 text-center">
+                          <svg
+                            aria-hidden="true"
+                            className="mx-auto mb-3 text-muted-foreground/60"
+                            fill="none"
+                            height="36"
+                            viewBox="0 0 100 60"
+                            width="60"
+                          >
+                            <path
+                              d="M 18 22 Q 18 48 50 48 Q 82 48 82 22"
+                              stroke="currentColor"
+                              strokeLinecap="round"
+                              strokeWidth="2"
+                            />
+                            <line
+                              stroke="currentColor"
+                              strokeLinecap="round"
+                              strokeWidth="2"
+                              x1="14"
+                              x2="86"
+                              y1="22"
+                              y2="22"
+                            />
+                          </svg>
+                          <p className="text-sm text-muted-foreground">Completed tasks will collect here.</p>
+                        </div>
                       ) : (
                         completedTasks.slice(0, 4).map((task) => (
                           <div
@@ -1941,7 +2005,7 @@ export default function Dashboard({ user }: { user: User }) {
                 </div>
               </section>
 
-              <section className="border border-border bg-card/90 p-6 sm:p-8 jp-paper" id="rhythm">
+              <section className="border border-border bg-card/90 p-6 sm:p-8 jp-paper jp-enter jp-enter-delay-4" id="rhythm">
                 <div className="flex flex-col gap-3 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
                   <div>
                     <p className="text-[11px] uppercase tracking-[0.42em] text-muted-foreground">
@@ -1997,9 +2061,28 @@ export default function Dashboard({ user }: { user: User }) {
 
                     <div className="mt-4 space-y-3">
                       {recentSessions.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">
-                          Completed sessions will appear once the timer starts moving.
-                        </p>
+                        <div className="py-4 text-center">
+                          <svg
+                            aria-hidden="true"
+                            className="mx-auto mb-3 text-muted-foreground/60"
+                            fill="none"
+                            height="40"
+                            viewBox="0 0 100 50"
+                            width="80"
+                          >
+                            <path
+                              className="jp-ink-draw"
+                              d="M 8 44 L 28 18 L 42 34 L 58 10 L 74 32 L 92 44"
+                              stroke="currentColor"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                            />
+                          </svg>
+                          <p className="text-sm text-muted-foreground">
+                            Completed sessions will appear once the timer starts moving.
+                          </p>
+                        </div>
                       ) : (
                         recentSessions.map((session) => (
                           <div
